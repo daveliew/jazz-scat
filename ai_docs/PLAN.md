@@ -1,6 +1,6 @@
 # Music Genie - Working Plan
 
-> **Status**: MVP Built - Polish & Demo Prep
+> **Status**: MVP Complete - Voice DJ Integration
 > **Hackathon**: ElevenLabs AI Agents Hackathon 2025
 
 ## The Problem
@@ -14,72 +14,81 @@ Learning to sing, harmonize, or improvise is hard without:
 
 ## Our Solution: Music Genie
 
-An AI-powered jam session that lets you practice like a pro:
-1. **Generate AI backing tracks** (bass, harmony, rhythm vocals)
-2. **Record your improv** over the tracks
-3. **Get AI coach feedback** to improve
+An AI-powered jam session with a **conversational DJ**:
+1. **Talk to your AI DJ** - describe the vibe you want
+2. **AI generates backing tracks** - custom audio from your description
+3. **Loop and jam** - practice over the generated track
+4. **Iterate** - ask for changes, try new styles
 
 No band needed. No expensive coach. Just you and the Genie.
 
 ## Core User Flow
 
 ```
-User wants to practice
-    |
-Opens Music Genie
-    |
-Selects genre + BPM (doo-wop, gospel, jazz, etc.)
-    |
-Generates AI backing tracks (bass, harmony, rhythm)
-    |
-Plays all tracks together
-    |
-Records their vocal improv (30 sec max)
-    |
-AI Coach analyzes and gives feedback + tips
-    |
-Iterate and improve!
+User clicks "Start Jamming"
+    │
+    ▼
+Voice DJ greets: "What vibe are you feeling?"
+    │
+    ▼
+User speaks: "Something smooth and jazzy"
+    │
+    ▼
+DJ calls generate_backing_track tool
+    │
+    ▼
+Sound Generation API creates 15s audio
+    │
+    ▼
+Track plays on loop - user jams along!
+    │
+    ▼
+User can request changes or new tracks
 ```
 
 ## What's Built
 
-### MVP (Complete)
+### Voice DJ (Main Page) ✅
 
-- [x] Landing page with "Start Jamming" CTA
-- [x] Genre selector (6 genres: doo-wop, gospel, barbershop, lo-fi, jazz, pop)
+- [x] Conversational AI DJ persona
+- [x] Voice input/output via WebRTC
+- [x] `generate_backing_track` client tool
+- [x] Sound Generation API integration
+- [x] Looping audio playback
+- [x] Session log display
+- [x] Visual state indicators (orb animation)
+
+### Layer-by-Layer Mode (/improv) ✅
+
+- [x] Genre selector (6 genres)
 - [x] BPM control with genre-appropriate ranges
-- [x] AI layer generation (ElevenLabs Music API)
-  - Bass line
-  - Harmony vocals
-  - Rhythm/beatbox
+- [x] Individual layer generation (bass, harmony, rhythm)
 - [x] Audio mixer with volume/mute per layer
-- [x] Play all / Stop all controls
-- [x] User recording (mic capture, 30s max)
-- [x] AI Coach feedback (rule-based analysis)
-- [x] New session reset
+- [x] User recording (30s max)
+- [x] AI Coach feedback
 
 ### ElevenLabs APIs Used
 
 | API | Purpose |
 |-----|---------|
-| `music.compose()` | Generate backing track layers |
-| `speechToText.convert()` | Transcribe user vocals for analysis |
+| Conversational AI | Voice DJ that interprets requests |
+| Sound Generation | Creates backing tracks from text prompts |
+| Client Tools | `generate_backing_track` - triggers audio generation |
 
 ### To Polish
 
-- [ ] Test full flow end-to-end
-- [ ] Improve AI coach feedback (consider Claude for deeper analysis)
-- [ ] Add looping for backing tracks
+- [ ] Test full Voice DJ flow end-to-end
+- [ ] Handle generation errors gracefully
+- [ ] Add stop/restart track controls
 - [ ] Mobile responsiveness check
-- [ ] Error handling polish
+- [ ] Demo video recording
 
 ## Future Ideas (Post-Hackathon)
 
-- [ ] Instrument tracks (guitar, piano, drums)
-- [ ] Song structure mode (verse, chorus, bridge)
+- [ ] Multiple concurrent tracks (layering)
 - [ ] Save and share jam sessions
-- [ ] Voice-to-MIDI conversion
-- [ ] Pitch accuracy scoring
+- [ ] Pitch/tempo adjustment
+- [ ] Voice coaching feedback
 - [ ] Battle mode (compete with friends)
 
 ## Technical Architecture
@@ -87,45 +96,47 @@ Iterate and improve!
 ```
 /src
 ├── app/
-│   ├── page.tsx              # Landing page
-│   ├── improv/page.tsx       # Main jam session
+│   ├── page.tsx              # Voice DJ (main interface)
+│   ├── improv/page.tsx       # Layer-by-layer mode
 │   └── api/
-│       ├── generate-layer/   # ElevenLabs music generation
-│       └── analyze-improv/   # Transcription + feedback
+│       ├── conversation-token/   # WebRTC auth
+│       ├── sound-generation/     # Text-to-audio
+│       ├── generate-layer/       # Individual layers
+│       └── analyze-improv/       # Vocal feedback
 ├── components/improv/
-│   ├── GenreSelector.tsx     # Genre + BPM controls
-│   ├── LayerMixer.tsx        # Track layer controls
-│   ├── TrackLayer.tsx        # Individual layer UI
-│   └── CoachFeedback.tsx     # AI feedback display
+│   ├── GenreSelector.tsx
+│   ├── LayerMixer.tsx
+│   ├── TrackLayer.tsx
+│   ├── VoiceCoach.tsx
+│   └── CoachFeedback.tsx
 ├── lib/
-│   ├── elevenlabs.ts         # API client + helpers
-│   └── audio-mixer.ts        # Web Audio API mixer
+│   ├── elevenlabs.ts         # API helpers
+│   └── audio-mixer.ts        # Web Audio API
 └── types/
     └── improv.ts             # TypeScript types
 ```
 
 ## Demo Script
 
-> "Ever wanted to sing harmony but had no one to practice with?"
+> "Ever wanted to jam but had no band to practice with?"
 
 1. Open Music Genie - see the landing page
-2. Click "Start Jamming"
-3. Pick a genre (Doo-Wop for demo appeal)
-4. Generate each backing layer - show AI creating bass, harmony, rhythm
-5. Hit "Play All" - hear the full backing track
-6. Record a quick vocal improv
-7. Click "Get Feedback" - AI coach gives tips
-8. "Now anyone can practice like a pro, anytime, anywhere."
+2. Click "Start Jamming" - DJ greets you
+3. Say: *"Give me something smooth and jazzy"*
+4. Watch the DJ respond and generate a track
+5. Track loops automatically - sing/hum along!
+6. Say: *"Make it more upbeat"* - new track generates
+7. "Now anyone can jam with AI, anytime, anywhere."
 
 ## Judging Criteria Alignment
 
 | Criteria | Our Strategy | Confidence |
 |----------|-------------|------------|
-| Working Prototype | Full flow works end-to-end | High |
-| Technical Complexity | Music AI + Audio mixing + Analysis | High |
-| Innovation | AI band-in-a-box for practice | High |
-| Real-World Impact | Democratize music education | High |
-| ElevenLabs Integration | Core to product (Music + STT) | Very High |
+| Working Prototype | Voice DJ flow works end-to-end | High |
+| Technical Complexity | Conversational AI + Sound Gen + Client Tools | High |
+| Innovation | AI DJ that creates music on demand | Very High |
+| Real-World Impact | Democratize music practice | High |
+| ElevenLabs Integration | Core to product (ConvAI + Sound Gen) | Very High |
 
 ## Quick Commands
 
@@ -133,9 +144,9 @@ Iterate and improve!
 # Dev server
 npm run dev
 
-# Type check
-npm run typecheck
-
 # Lint
 npm run lint
+
+# Test agent connection
+npm run test:agent
 ```
