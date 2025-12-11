@@ -184,7 +184,7 @@ export default function Home() {
       // Auto-stop after 30 seconds
       setTimeout(() => {
         if (mediaRecorderRef.current?.state === 'recording') {
-          stopRecording();
+          mediaRecorderRef.current.stop();
         }
       }, 30000);
     } catch (err) {
@@ -517,7 +517,7 @@ export default function Home() {
       {isPlaying && (
         <div className="mt-4 flex items-center gap-2 text-pink-400">
           <span className="animate-pulse">●</span>
-          <span>Playing</span>
+          <span>Playing{backingTrackUrl ? ' (Backing Track)' : ''}</span>
         </div>
       )}
 
