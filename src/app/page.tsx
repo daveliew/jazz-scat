@@ -19,6 +19,21 @@ interface GeneratedLayer {
   audioUrl: string | null;
 }
 
+// User recorded layers for multi-layer looper
+interface RecordedLayer {
+  id: string;
+  audioUrl: string;
+  audioElement: HTMLAudioElement | null;
+  isPlaying: boolean;
+}
+
+// Session log entries
+interface LogEntry {
+  role: 'user' | 'agent';
+  text: string;
+  timestamp: Date;
+}
+
 export default function Home() {
   // Connection state
   const [appState, setAppState] = useState<AppState>('idle');
@@ -36,10 +51,21 @@ export default function Home() {
   const [currentGenre, setCurrentGenre] = useState('doo-wop');
   const [currentBpm, setCurrentBpm] = useState(90);
 
+  // Multi-layer looper state
+  const [recordedLayers, setRecordedLayers] = useState<RecordedLayer[]>([]);
+
+  // Session log state
+  const [sessionLog, setSessionLog] = useState<LogEntry[]>([]);
+
+  // Backing track state (from Sound Generation API)
+  const [backingTrackUrl, setBackingTrackUrl] = useState<string | null>(null);
+
   // Refs
   const mixerRef = useRef<AudioMixer | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
+  const backingTrackRef = useRef<HTMLAudioElement | null>(null);
+  const sessionLogRef = useRef<HTMLDivElement | null>(null);
 
   // Initialize audio mixer
   useEffect(() => {
@@ -134,8 +160,21 @@ export default function Home() {
       mediaRecorder.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         const audioUrl = URL.createObjectURL(audioBlob);
-        await mixerRef.current?.initialize();
-        await mixerRef.current?.loadTrack('user', audioUrl);
+
+        // Create new layer for multi-layer looper
+        const newLayer: RecordedLayer = {
+          id: `layer-${Date.now()}`,
+          audioUrl,
+          audioElement: null,
+          isPlaying: false,
+        };
+
+        // Create audio element for this layer
+        const audioElement = new Audio(audioUrl);
+        audioElement.loop = true;
+        newLayer.audioElement = audioElement;
+
+        setRecordedLayers(prev => [...prev, newLayer]);
         stream.getTracks().forEach(track => track.stop());
         setStatusText('Recording saved!');
       };
@@ -162,6 +201,86 @@ export default function Home() {
       setTimeout(() => {
         if (isConnected) setStatusText('Listening...');
       }, 1500);
+    }
+  }, [isConnected]);
+
+  // Recorded layer controls
+  const playRecordedLayer = useCallback((layerId: string) => {
+    setRecordedLayers(prev =>
+      prev.map(layer => {
+        if (layer.id === layerId && layer.audioElement) {
+          layer.audioElement.play();
+          return { ...layer, isPlaying: true };
+        }
+        return layer;
+      })
+    );
+  }, []);
+
+  const pauseRecordedLayer = useCallback((layerId: string) => {
+    setRecordedLayers(prev =>
+      prev.map(layer => {
+        if (layer.id === layerId && layer.audioElement) {
+          layer.audioElement.pause();
+          return { ...layer, isPlaying: false };
+        }
+        return layer;
+      })
+    );
+  }, []);
+
+  const deleteRecordedLayer = useCallback((layerId: string) => {
+    setRecordedLayers(prev => {
+      const layer = prev.find(l => l.id === layerId);
+      if (layer?.audioElement) {
+        layer.audioElement.pause();
+        URL.revokeObjectURL(layer.audioUrl);
+      }
+      return prev.filter(l => l.id !== layerId);
+    });
+  }, []);
+
+  // Generate backing track using Sound Generation API (called by clientTools)
+  const generateBackingTrack = useCallback(async (prompt: string): Promise<string> => {
+    setAppState('generating');
+    setStatusText('Spinning up track...');
+
+    try {
+      const response = await fetch('/api/sound-generation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: prompt + ' high quality instrumental jazz loop',
+          duration_seconds: 15,
+          prompt_influence: 0.5,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Sound generation failed: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      setBackingTrackUrl(audioUrl);
+
+      // Play looping audio
+      if (backingTrackRef.current) {
+        backingTrackRef.current.src = audioUrl;
+        backingTrackRef.current.loop = true;
+        await backingTrackRef.current.play();
+      }
+
+      setAppState('playing');
+      setStatusText('Track playing!');
+      setIsPlaying(true);
+
+      return 'Track generated and playing!';
+    } catch (err) {
+      console.error('Generate backing track error:', err);
+      setStatusText('Generation failed');
+      setAppState(isConnected ? 'listening' : 'idle');
+      return 'Failed to generate track';
     }
   }, [isConnected]);
 
@@ -203,13 +322,24 @@ export default function Home() {
     }
   }, [generateLayer, playAll, stopAll, startRecording, stopRecording]);
 
-  // ElevenLabs conversation
+  // ElevenLabs conversation with clientTools
+  // NOTE: ElevenLabs Agent system prompt should be:
+  // "You are a jazz DJ. Ask the user for a vibe. When they answer,
+  // call the generate_backing_track tool with a descriptive music prompt."
   const conversation = useConversation({
+    clientTools: {
+      generate_backing_track: async ({ prompt }: { prompt: string }) => {
+        console.log('Agent called generate_backing_track with:', prompt);
+        const result = await generateBackingTrack(prompt);
+        return result;
+      },
+    },
     onConnect: () => {
       setIsConnected(true);
       setAppState('listening');
       setStatusText('Listening...');
       setError(null);
+      setSessionLog([]); // Clear session log on new connection
     },
     onDisconnect: () => {
       setIsConnected(false);
@@ -217,8 +347,14 @@ export default function Home() {
       setStatusText('');
     },
     onMessage: (message) => {
-      // Parse agent messages for action triggers
+      // Add to session log
       if (message.message) {
+        setSessionLog(prev => [...prev, {
+          role: 'agent',
+          text: message.message,
+          timestamp: new Date(),
+        }]);
+        // Also parse for action triggers (fallback mechanism)
         parseAndTriggerAction(message.message);
       }
     },
@@ -391,6 +527,69 @@ export default function Home() {
           <p>Tap the button to start a voice conversation with your AI jam partner</p>
         </div>
       )}
+
+      {/* Session Log */}
+      {sessionLog.length > 0 && (
+        <div className="mt-8 w-full max-w-md">
+          <h3 className="text-sm font-semibold text-slate-400 mb-2">Session Log</h3>
+          <div
+            ref={sessionLogRef}
+            className="bg-slate-800/50 rounded-lg p-3 max-h-32 overflow-y-auto border border-slate-700"
+          >
+            {sessionLog.map((entry, index) => (
+              <div key={index} className="text-sm mb-1">
+                <span className={entry.role === 'agent' ? 'text-purple-400' : 'text-blue-400'}>
+                  {entry.role === 'agent' ? '🎵 DJ: ' : '🎤 You: '}
+                </span>
+                <span className="text-slate-300">{entry.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recorded Layers (Looper) */}
+      {recordedLayers.length > 0 && (
+        <div className="mt-6 w-full max-w-md">
+          <h3 className="text-sm font-semibold text-slate-400 mb-2">Your Recordings</h3>
+          <div className="space-y-2">
+            {recordedLayers.map((layer, index) => (
+              <div
+                key={layer.id}
+                className="flex items-center gap-3 bg-slate-800/50 rounded-lg p-3 border border-slate-700"
+              >
+                <span className="text-slate-400 text-sm">Layer {index + 1}</span>
+                <div className="flex gap-2 ml-auto">
+                  {layer.isPlaying ? (
+                    <button
+                      onClick={() => pauseRecordedLayer(layer.id)}
+                      className="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded text-sm transition-colors"
+                    >
+                      ⏸️ Pause
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => playRecordedLayer(layer.id)}
+                      className="px-3 py-1 bg-green-600 hover:bg-green-500 rounded text-sm transition-colors"
+                    >
+                      ▶️ Play
+                    </button>
+                  )}
+                  <button
+                    onClick={() => deleteRecordedLayer(layer.id)}
+                    className="px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-sm transition-colors"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Hidden audio element for backing track */}
+      <audio ref={backingTrackRef} className="hidden" />
 
       {/* Powered by */}
       <p className="mt-8 text-slate-600 text-xs">
