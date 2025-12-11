@@ -125,6 +125,29 @@ User: "Give me something chill and jazzy"
    └───────────────────┘
 ```
 
+## Layering
+
+Layering in music means recording multiple audio tracks that play simultaneously on top of each other to create a richer sound.
+
+```
+┌─────────────────────────────────────────────┐
+│  Backing Track (looping)                    │  ← AI-generated jazz loop
+├─────────────────────────────────────────────┤
+│  Layer 1: Your vocal melody                 │  ← First recording
+├─────────────────────────────────────────────┤
+│  Layer 2: Harmony/beatbox                   │  ← Second recording
+├─────────────────────────────────────────────┤
+│  Layer 3: More vocals                       │  ← Third recording
+└─────────────────────────────────────────────┘
+           ↓ All play together ↓
+```
+
+**The Workflow:**
+1. AI generates a backing track from your vibe request
+2. Track loops continuously while you record
+3. Add layer after layer - melody, harmony, beatbox
+4. All layers play simultaneously for a full arrangement
+
 ## Tech Stack
 
 - **Framework**: Next.js 16 + React 19
