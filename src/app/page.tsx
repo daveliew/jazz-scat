@@ -242,10 +242,12 @@ export default function Home() {
 
   // Generate backing track using Sound Generation API (called by clientTools)
   const generateBackingTrack = useCallback(async (prompt: string): Promise<string> => {
+    console.log('🎸 [1] Starting generateBackingTrack with prompt:', prompt);
     setAppState('generating');
     setStatusText('Spinning up track...');
 
     try {
+      console.log('🎸 [2] Calling /api/sound-generation...');
       const response = await fetch('/api/sound-generation', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -256,28 +258,41 @@ export default function Home() {
         }),
       });
 
+      console.log('🎸 [3] Response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`Sound generation failed: ${response.status}`);
+        const errorText = await response.text();
+        console.error('🎸 [3b] Error response:', errorText);
+        throw new Error(`Sound generation failed: ${response.status} - ${errorText}`);
       }
 
       const blob = await response.blob();
+      console.log('🎸 [4] Got blob, size:', blob.size, 'type:', blob.type);
+
       const audioUrl = URL.createObjectURL(blob);
+      console.log('🎸 [5] Created blob URL:', audioUrl);
       setBackingTrackUrl(audioUrl);
 
       // Play looping audio
+      console.log('🎸 [6] backingTrackRef.current exists?', !!backingTrackRef.current);
       if (backingTrackRef.current) {
         backingTrackRef.current.src = audioUrl;
         backingTrackRef.current.loop = true;
+        console.log('🎸 [7] Attempting to play...');
         await backingTrackRef.current.play();
+        console.log('🎸 [8] Play started successfully!');
+      } else {
+        console.error('🎸 [6b] backingTrackRef is null!');
       }
 
       setAppState('playing');
       setStatusText('Track playing!');
       setIsPlaying(true);
 
+      console.log('🎸 [9] Done! Returning success');
       return 'Track generated and playing!';
     } catch (err) {
-      console.error('Generate backing track error:', err);
+      console.error('🎸 [ERROR] Generate backing track error:', err);
       setStatusText('Generation failed');
       setAppState(isConnected ? 'listening' : 'idle');
       return 'Failed to generate track';
@@ -330,8 +345,13 @@ export default function Home() {
     clientTools: {
       generate_backing_track: async ({ prompt }: { prompt: string }) => {
         console.log('Agent called generate_backing_track with:', prompt);
-        const result = await generateBackingTrack(prompt);
-        return result;
+        try {
+          const result = await generateBackingTrack(prompt);
+          return result;
+        } catch (err) {
+          console.error('Tool error:', err);
+          return 'Sorry, music generation encountered an error. Please try again.';
+        }
       },
     },
     onConnect: () => {

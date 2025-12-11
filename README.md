@@ -1,36 +1,160 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Music Genie
 
-## Getting Started
+> Your AI jam partner - practice vocals anytime, with anyone... even when you're alone.
 
-First, run the development server:
+**ElevenLabs AI Agents Hackathon 2025**
+
+## The Problem
+
+Learning to sing, harmonize, or improvise is hard without:
+- A band or vocal group to practice with
+- A coach to give real-time feedback
+- Backing tracks that match your style and tempo
+
+**Result**: Most people never develop their musical potential because practicing alone is boring and unproductive.
+
+## Our Solution
+
+Music Genie is an AI-powered jam session that lets you practice like a pro:
+
+1. **Talk to your AI DJ** - Tell it what vibe you want
+2. **AI generates backing tracks** - Bass, harmony, rhythm vocals on demand
+3. **Record your improv** over the tracks
+4. **Get real-time coaching** to improve
+
+No band needed. No expensive coach. Just you and the Genie.
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| Conversational DJ | Voice-powered AI that asks what you want to jam |
+| Sound Generation | Creates custom backing tracks from text prompts |
+| Multi-Genre Support | Doo-wop, Gospel, Barbershop, Lo-Fi, Jazz, Pop |
+| Layer Mixer | Control volume/mute for each generated track |
+| Recording | Capture your vocal improv (30s max) |
+| Loop Playback | Practice over looping backing tracks |
+
+## Quick Start
 
 ```bash
+# Install dependencies
+npm install
+
+# Set up environment
+cp .env.example .env.local
+# Add your ElevenLabs API key and Agent ID
+
+# Run dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Environment Variables
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+ELEVENLABS_API_KEY=sk_...        # Your ElevenLabs API key
+ELEVENLABS_AGENT_ID=agent_...    # Your Conversational AI agent ID
+```
 
-## Learn More
+**Required API Permissions**:
+- Conversational AI (convai_write)
+- Sound Effects (for backing track generation)
 
-To learn more about Next.js, take a look at the following resources:
+## ElevenLabs APIs Used
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+| API | Purpose |
+|-----|---------|
+| Conversational AI | Voice DJ that interprets user requests |
+| Sound Generation | Creates backing track audio from prompts |
+| Client Tools | Triggers music generation from conversation |
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Architecture
 
-## Deploy on Vercel
+```
+src/
+├── app/
+│   ├── page.tsx                    # Main conversational DJ interface
+│   ├── improv/page.tsx             # Layer-by-layer jam session
+│   └── api/
+│       ├── conversation-token/     # ElevenLabs WebRTC auth
+│       ├── sound-generation/       # Text-to-audio backing tracks
+│       ├── generate-layer/         # Individual layer generation
+│       └── analyze-improv/         # Vocal analysis feedback
+├── components/improv/
+│   ├── GenreSelector.tsx           # Genre + BPM controls
+│   ├── LayerMixer.tsx              # Track layer controls
+│   ├── TrackLayer.tsx              # Individual layer UI
+│   ├── VoiceCoach.tsx              # AI voice coaching
+│   └── CoachFeedback.tsx           # Feedback display
+├── lib/
+│   ├── elevenlabs.ts               # API client helpers
+│   └── audio-mixer.ts              # Web Audio API mixer
+└── types/
+    └── improv.ts                   # TypeScript types
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## How It Works
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+User: "Give me something chill and jazzy"
+           │
+           ▼
+   ┌───────────────────┐
+   │  ElevenLabs Agent │  (Conversational AI)
+   │    "DJ Persona"   │
+   └─────────┬─────────┘
+             │ calls client tool
+             ▼
+   ┌───────────────────┐
+   │ generate_backing_ │  (Client Tool)
+   │      track        │
+   └─────────┬─────────┘
+             │ POST /api/sound-generation
+             ▼
+   ┌───────────────────┐
+   │  Sound Generation │  (ElevenLabs API)
+   │       API         │
+   └─────────┬─────────┘
+             │ returns audio
+             ▼
+   ┌───────────────────┐
+   │   Audio Playback  │  (Web Audio API)
+   │     (looping)     │
+   └───────────────────┘
+```
+
+## Tech Stack
+
+- **Framework**: Next.js 16 + React 19
+- **Styling**: Tailwind CSS 4
+- **Voice AI**: ElevenLabs Conversational AI
+- **Audio**: ElevenLabs Sound Generation + Web Audio API
+- **Language**: TypeScript
+
+## Scripts
+
+```bash
+npm run dev       # Start development server
+npm run build     # Production build
+npm run lint      # Run ESLint
+npm run test:agent # Test ElevenLabs agent connection
+```
+
+## Demo Flow
+
+1. Open Music Genie
+2. Click "Start Jamming"
+3. Tell the DJ what vibe you want: *"Something smooth and jazzy"*
+4. AI generates a backing track automatically
+5. Track loops - sing along!
+6. End session when done
+
+## Team
+
+Built for ElevenLabs AI Agents Hackathon 2025
+
+## License
+
+MIT
