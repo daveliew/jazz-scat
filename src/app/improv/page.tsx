@@ -4,6 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { GenreSelector } from '@/components/improv/GenreSelector';
 import { LayerMixer } from '@/components/improv/LayerMixer';
 import { CoachFeedback } from '@/components/improv/CoachFeedback';
+import { VoiceCoach } from '@/components/improv/VoiceCoach';
 import {
   Genre,
   TrackLayer,
@@ -374,7 +375,7 @@ export default function ImprovPage() {
           />
         </div>
 
-        {/* AI Coach */}
+        {/* AI Coach - Analyze Recording */}
         <CoachFeedback
           feedback={coachFeedback}
           tips={coachTips}
@@ -382,6 +383,11 @@ export default function ImprovPage() {
           onAnalyze={handleAnalyze}
           hasUserRecording={hasUserRecording}
         />
+
+        {/* Voice Coach - Real-time Conversation */}
+        <div className="mb-8">
+          <VoiceCoach />
+        </div>
 
         {/* Instructions */}
         <div className="mt-8 p-4 bg-slate-800/30 rounded-xl text-sm text-slate-400">
