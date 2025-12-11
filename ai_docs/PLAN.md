@@ -1,4 +1,4 @@
-# Music Genie - Working Plan
+# Jazz Scat - Working Plan
 
 > **Status**: MVP Complete - Voice DJ Integration
 > **Hackathon**: ElevenLabs AI Agents Hackathon 2025
@@ -12,7 +12,7 @@ Learning to sing, harmonize, or improvise is hard without:
 
 **Result**: Most people never develop their musical potential because practice alone is boring and unproductive.
 
-## Our Solution: Music Genie
+## Our Solution: Jazz Scat
 
 An AI-powered jam session with a **conversational DJ**:
 1. **Talk to your AI DJ** - describe the vibe you want
@@ -20,7 +20,7 @@ An AI-powered jam session with a **conversational DJ**:
 3. **Loop and jam** - practice over the generated track
 4. **Iterate** - ask for changes, try new styles
 
-No band needed. No expensive coach. Just you and the Genie.
+No band needed. No expensive coach. Just you and Jazz Scat.
 
 ## Core User Flow
 

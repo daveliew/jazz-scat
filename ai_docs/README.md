@@ -1,4 +1,4 @@
-# Music Genie - AI Documentation
+# Jazz Scat - AI Documentation
 
 ## Quick Navigation
 

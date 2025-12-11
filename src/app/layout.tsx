@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Music Genie - Your AI Music Companion",
+  title: "Jazz Scat - Your AI Jam Partner",
   description:
     "An AI-powered voice assistant for music discovery, creation, and jamming.",
   keywords: ["music", "AI", "voice", "jamming", "companion"],

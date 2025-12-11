@@ -1,4 +1,4 @@
-# Music Genie - Technology Stack
+# Jazz Scat - Technology Stack
 
 ## Core Stack
 

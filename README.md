@@ -1,4 +1,4 @@
-# Music Genie
+# Jazz Scat
 
 > Your AI jam partner - practice vocals anytime, with anyone... even when you're alone.
 
@@ -15,14 +15,14 @@ Learning to sing, harmonize, or improvise is hard without:
 
 ## Our Solution
 
-Music Genie is an AI-powered jam session that lets you practice like a pro:
+Jazz Scat is an AI-powered jam session that lets you practice like a pro:
 
 1. **Talk to your AI DJ** - Tell it what vibe you want
 2. **AI generates backing tracks** - Bass, harmony, rhythm vocals on demand
 3. **Record your improv** over the tracks
 4. **Get real-time coaching** to improve
 
-No band needed. No expensive coach. Just you and the Genie.
+No band needed. No expensive coach. Just you and Jazz Scat.
 
 ## Features
 
@@ -167,7 +167,7 @@ npm run test:agent # Test ElevenLabs agent connection
 
 ## Demo Flow
 
-1. Open Music Genie
+1. Open Jazz Scat
 2. Click "Start Jamming"
 3. Tell the DJ what vibe you want: *"Something smooth and jazzy"*
 4. AI generates a backing track automatically

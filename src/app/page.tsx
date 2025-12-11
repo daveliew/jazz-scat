@@ -54,6 +54,7 @@ export default function Home() {
 
   // Multi-layer looper state
   const [recordedLayers, setRecordedLayers] = useState<RecordedLayer[]>([]);
+  const [isRecordingLayer, setIsRecordingLayer] = useState(false); // Track recording independently
 
   // Session log state
   const [sessionLog, setSessionLog] = useState<LogEntry[]>([]);
@@ -179,7 +180,8 @@ export default function Home() {
     if (!isPlaying) {
       setAppState('recording');
     }
-    setStatusText('Recording your improv...');
+    setIsRecordingLayer(true);
+    setStatusText('Recording your layer...');
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -212,7 +214,8 @@ export default function Home() {
 
         setRecordedLayers(prev => [...prev, newLayer]);
         stream.getTracks().forEach(track => track.stop());
-        setStatusText('Recording saved!');
+        setIsRecordingLayer(false);
+        setStatusText('Layer saved!');
       };
 
       mediaRecorder.start();
@@ -226,16 +229,20 @@ export default function Home() {
     } catch (err) {
       console.error('Recording error:', err);
       setStatusText('Mic access denied');
-      setAppState(isConnected ? 'listening' : 'idle');
+      setIsRecordingLayer(false);
+      if (!isPlaying) {
+        setAppState(isConnected ? 'listening' : 'idle');
+      }
     }
   }, [isConnected, isPlaying]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop();
+      setIsRecordingLayer(false);
       // If backing track is playing, stay in playing state (layering mode)
       if (isPlaying) {
-        setStatusText('Layer recorded!');
+        setStatusText('Saving layer...');
       } else {
         setAppState(isConnected ? 'listening' : 'idle');
         setTimeout(() => {
@@ -442,10 +449,14 @@ export default function Home() {
   useEffect(() => {
     if (isConnected) {
       if (conversation.isSpeaking) {
-        setAppState('speaking');
-        setStatusText('');
+        // Only show speaking state if not generating/playing
+        if (appState !== 'generating' && appState !== 'playing') {
+          setAppState('speaking');
+          setStatusText('');
+        }
       } else if (appState === 'speaking' || appState === 'processing') {
         // After speaking or processing, go back to listening
+        // But NOT if we're generating or playing music
         setAppState('listening');
         setStatusText('Listening...');
       }
@@ -508,7 +519,7 @@ export default function Home() {
       {/* Header */}
       <div className="text-center mb-8">
         <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
-          Music Genie
+          Jazz Scat
         </h1>
         <p className="text-slate-300 text-xl max-w-md mx-auto">
           {isConnected ? statusText || 'Your AI jam partner is ready' : 'Practice like a pro. AI-generated backing tracks + real-time coaching.'}
@@ -610,7 +621,7 @@ export default function Home() {
                 <>⏸️ Pause</>
               )}
             </button>
-            {appState !== 'recording' && (
+            {!isRecordingLayer && (
               <button
                 onClick={startRecording}
                 className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500
@@ -620,7 +631,7 @@ export default function Home() {
                 🎤 Add Layer
               </button>
             )}
-            {appState === 'recording' && (
+            {isRecordingLayer && (
               <button
                 onClick={stopRecording}
                 className="px-6 py-2 bg-red-600 hover:bg-red-500 animate-pulse
