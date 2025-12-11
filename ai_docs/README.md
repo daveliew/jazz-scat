@@ -52,7 +52,7 @@
 
 ## ElevenLabs Agent Config
 
-The agent (`agent_7201kc6j4ttme9g9afdw0arpene8`) is configured with:
+The agent (`agent_2001kc6ky17cenhv0twnfva8p869`) is configured with:
 - **Persona**: Jazz DJ
 - **Client Tool**: `generate_backing_track`
 - **System Prompt**: Asks for vibe, calls tool to generate music

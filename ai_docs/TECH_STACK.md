@@ -103,7 +103,7 @@ ELEVENLABS_AGENT_ID=agent_...  # Your Conversational AI agent ID
 
 ## ElevenLabs Agent Configuration
 
-**Agent ID**: `agent_7201kc6j4ttme9g9afdw0arpene8`
+**Agent ID**: `agent_2001kc6ky17cenhv0twnfva8p869`
 
 **Persona**: Jazz DJ
 
