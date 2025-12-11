@@ -8,6 +8,7 @@ type AppState =
   | 'idle'
   | 'connecting'
   | 'listening'
+  | 'processing'
   | 'speaking'
   | 'generating'
   | 'playing'
@@ -59,6 +60,7 @@ export default function Home() {
 
   // Backing track state (from Sound Generation API)
   const [backingTrackUrl, setBackingTrackUrl] = useState<string | null>(null);
+  const [backingTrackPaused, setBackingTrackPaused] = useState(false);
 
   // Refs
   const mixerRef = useRef<AudioMixer | null>(null);
@@ -74,6 +76,37 @@ export default function Home() {
       mixerRef.current?.dispose();
     };
   }, []);
+
+  // Toggle backing track pause/resume
+  const toggleBackingTrack = useCallback(() => {
+    if (!backingTrackRef.current || !backingTrackUrl) return;
+
+    if (backingTrackPaused) {
+      backingTrackRef.current.play();
+      setBackingTrackPaused(false);
+      setStatusText('Track playing!');
+    } else {
+      backingTrackRef.current.pause();
+      setBackingTrackPaused(true);
+      setStatusText('Track paused');
+    }
+  }, [backingTrackPaused, backingTrackUrl]);
+
+  // Keyboard shortcuts (spacebar to toggle playback)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle spacebar when not typing in an input
+      if (e.code === 'Space' && e.target === document.body) {
+        e.preventDefault();
+        if (isPlaying) {
+          toggleBackingTrack();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, toggleBackingTrack]);
 
   // Action handlers - these will be triggered by parsing agent responses
   const generateLayer = useCallback(async (layerType: 'bass' | 'harmony' | 'rhythm') => {
@@ -142,7 +175,10 @@ export default function Home() {
   }, [isConnected]);
 
   const startRecording = useCallback(async () => {
-    setAppState('recording');
+    // Only change appState if not already playing (allows layering while track plays)
+    if (!isPlaying) {
+      setAppState('recording');
+    }
     setStatusText('Recording your improv...');
 
     try {
@@ -192,17 +228,22 @@ export default function Home() {
       setStatusText('Mic access denied');
       setAppState(isConnected ? 'listening' : 'idle');
     }
-  }, [isConnected]);
+  }, [isConnected, isPlaying]);
 
   const stopRecording = useCallback(() => {
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop();
-      setAppState(isConnected ? 'listening' : 'idle');
-      setTimeout(() => {
-        if (isConnected) setStatusText('Listening...');
-      }, 1500);
+      // If backing track is playing, stay in playing state (layering mode)
+      if (isPlaying) {
+        setStatusText('Layer recorded!');
+      } else {
+        setAppState(isConnected ? 'listening' : 'idle');
+        setTimeout(() => {
+          if (isConnected) setStatusText('Listening...');
+        }, 1500);
+      }
     }
-  }, [isConnected]);
+  }, [isConnected, isPlaying]);
 
   // Recorded layer controls
   const playRecordedLayer = useCallback((layerId: string) => {
@@ -367,8 +408,20 @@ export default function Home() {
       setStatusText('');
     },
     onMessage: (message) => {
-      // Add to session log
-      if (message.message) {
+      console.log('📨 Message event:', message);
+      // Handle user transcript - show what user said and switch to processing
+      if ('source' in message && message.source === 'user' && message.message) {
+        setSessionLog(prev => [...prev, {
+          role: 'user',
+          text: message.message,
+          timestamp: new Date(),
+        }]);
+        // User finished speaking, agent is processing
+        setAppState('processing');
+        setStatusText('Thinking...');
+      }
+      // Handle agent message
+      else if (message.message) {
         setSessionLog(prev => [...prev, {
           role: 'agent',
           text: message.message,
@@ -391,7 +444,8 @@ export default function Home() {
       if (conversation.isSpeaking) {
         setAppState('speaking');
         setStatusText('');
-      } else if (appState === 'speaking') {
+      } else if (appState === 'speaking' || appState === 'processing') {
+        // After speaking or processing, go back to listening
         setAppState('listening');
         setStatusText('Listening...');
       }
@@ -431,6 +485,8 @@ export default function Home() {
         return 'animate-pulse';
       case 'listening':
         return 'animate-pulse';
+      case 'processing':
+        return 'animate-spin-slow';
       case 'speaking':
         return 'animate-ping';
       case 'generating':
@@ -472,6 +528,7 @@ export default function Home() {
             {appState === 'idle' && '🎤'}
             {appState === 'connecting' && '⏳'}
             {appState === 'listening' && '👂'}
+            {appState === 'processing' && '🤔'}
             {appState === 'speaking' && '🗣️'}
             {appState === 'generating' && '✨'}
             {appState === 'playing' && '🎵'}
@@ -533,11 +590,48 @@ export default function Home() {
         </div>
       )}
 
-      {/* Playing indicator */}
+      {/* Playing controls */}
       {isPlaying && (
-        <div className="mt-4 flex items-center gap-2 text-pink-400">
-          <span className="animate-pulse">●</span>
-          <span>Playing{backingTrackUrl ? ' (Backing Track)' : ''}</span>
+        <div className="mt-4 flex flex-col items-center gap-3">
+          <div className="flex items-center gap-2 text-pink-400">
+            <span className={backingTrackPaused ? '' : 'animate-pulse'}>●</span>
+            <span>{backingTrackPaused ? 'Paused' : 'Playing'}{backingTrackUrl ? ' (Backing Track)' : ''}</span>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={toggleBackingTrack}
+              className="px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500
+                         rounded-full text-white font-semibold transition-all transform hover:scale-105 active:scale-95
+                         flex items-center gap-2"
+            >
+              {backingTrackPaused ? (
+                <>▶️ Resume</>
+              ) : (
+                <>⏸️ Pause</>
+              )}
+            </button>
+            {appState !== 'recording' && (
+              <button
+                onClick={startRecording}
+                className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500
+                           rounded-full text-white font-semibold transition-all transform hover:scale-105 active:scale-95
+                           flex items-center gap-2"
+              >
+                🎤 Add Layer
+              </button>
+            )}
+            {appState === 'recording' && (
+              <button
+                onClick={stopRecording}
+                className="px-6 py-2 bg-red-600 hover:bg-red-500 animate-pulse
+                           rounded-full text-white font-semibold transition-all
+                           flex items-center gap-2"
+              >
+                ⏹️ Stop Recording
+              </button>
+            )}
+          </div>
+          <span className="text-slate-500 text-xs">spacebar to pause/resume</span>
         </div>
       )}
 
