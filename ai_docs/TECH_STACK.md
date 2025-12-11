@@ -1,4 +1,4 @@
-# VoiceLifeline - Technology Stack
+# Music Genie - Technology Stack
 
 ## Core Stack
 

@@ -13,10 +13,10 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "VoiceLifeline - Emergency Help in Any Language",
+  title: "Music Genie - Your AI Music Companion",
   description:
-    "A voice-first emergency communication tool that helps people in distress communicate across language barriers.",
-  keywords: ["emergency", "multilingual", "voice", "AI", "help"],
+    "An AI-powered voice assistant for music discovery, creation, and jamming.",
+  keywords: ["music", "AI", "voice", "jamming", "companion"],
 };
 
 export default function RootLayout({

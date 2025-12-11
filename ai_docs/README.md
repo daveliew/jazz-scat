@@ -1,4 +1,4 @@
-# VoiceLifeline - AI Documentation
+# Music Genie - AI Documentation
 
 ## Quick Navigation
 

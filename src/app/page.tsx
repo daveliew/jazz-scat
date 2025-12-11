@@ -1,173 +1,87 @@
-"use client";
-
-import { useConversation } from "@elevenlabs/react";
-import { useState, useCallback } from "react";
-
-type ConversationStatus = "idle" | "connecting" | "connected" | "disconnected";
+import Link from "next/link";
 
 export default function Home() {
-  const [status, setStatus] = useState<ConversationStatus>("idle");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const conversation = useConversation({
-    onConnect: () => {
-      setStatus("connected");
-      setErrorMessage(null);
-    },
-    onDisconnect: () => {
-      setStatus("disconnected");
-      setTimeout(() => setStatus("idle"), 2000);
-    },
-    onError: (error) => {
-      console.error("Conversation error:", error);
-      setErrorMessage("Connection error. Please try again.");
-      setStatus("idle");
-    },
-  });
-
-  const startConversation = useCallback(async () => {
-    try {
-      setStatus("connecting");
-      setErrorMessage(null);
-
-      // Request microphone permission
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-
-      // Get signed URL from our API
-      const response = await fetch("/api/conversation-token");
-      if (!response.ok) {
-        throw new Error("Failed to get conversation token");
-      }
-
-      const { signedUrl } = await response.json();
-
-      // Start the conversation with WebSocket (more reliable)
-      await conversation.startSession({
-        signedUrl,
-      });
-    } catch (error) {
-      console.error("Failed to start conversation:", error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "Failed to connect"
-      );
-      setStatus("idle");
-    }
-  }, [conversation]);
-
-  const endConversation = useCallback(async () => {
-    await conversation.endSession();
-    setStatus("idle");
-  }, [conversation]);
-
-  const isSpeaking = conversation.isSpeaking;
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">
-          🆘 VoiceLifeline
+        <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
+          Music Genie
         </h1>
-        <p className="text-slate-300 text-lg">
-          Emergency help in any language
+        <p className="text-slate-300 text-xl max-w-md mx-auto">
+          Practice like a pro. AI-generated backing tracks + real-time coaching.
         </p>
       </div>
 
-      {/* Main interaction area */}
-      <div className="flex flex-col items-center gap-8">
-        {/* Visual Orb */}
-        <div
-          className={`relative w-48 h-48 md:w-64 md:h-64 rounded-full flex items-center justify-center transition-all duration-300 ${
-            status === "idle"
-              ? "bg-slate-700"
-              : status === "connecting"
-              ? "bg-yellow-500 animate-pulse"
-              : status === "connected" && isSpeaking
-              ? "bg-blue-500 animate-pulse scale-110"
-              : status === "connected"
-              ? "bg-green-500"
-              : "bg-slate-600"
-          }`}
-        >
-          {/* Inner glow effect */}
-          <div
-            className={`absolute inset-4 rounded-full ${
-              status === "connected" && isSpeaking
-                ? "bg-blue-400 animate-ping opacity-50"
-                : ""
-            }`}
-          />
+      {/* Visual element */}
+      <div className="relative w-56 h-56 md:w-72 md:h-72 mb-8">
+        {/* Animated rings */}
+        <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-20 animate-ping" />
+        <div className="absolute inset-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-30 animate-pulse" />
+        <div className="absolute inset-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 opacity-50" />
 
-          {/* Status icon */}
-          <div className="relative z-10 text-white text-6xl">
-            {status === "idle" && "🎤"}
-            {status === "connecting" && "⏳"}
-            {status === "connected" && !isSpeaking && "👂"}
-            {status === "connected" && isSpeaking && "🗣️"}
-            {status === "disconnected" && "✅"}
-          </div>
+        {/* Center icon */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-7xl md:text-8xl">🎤</span>
         </div>
+      </div>
 
-        {/* Status text */}
-        <div className="text-center">
-          <p className="text-xl text-white font-medium">
-            {status === "idle" && "Press to call for help"}
-            {status === "connecting" && "Connecting..."}
-            {status === "connected" && !isSpeaking && "Listening... Speak now"}
-            {status === "connected" && isSpeaking && "Assistant speaking..."}
-            {status === "disconnected" && "Call ended"}
+      {/* Main CTA */}
+      <Link
+        href="/improv"
+        className="w-72 h-20 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500
+                   text-white text-2xl font-bold rounded-2xl shadow-lg shadow-purple-500/25
+                   transform hover:scale-105 transition-all active:scale-95
+                   flex items-center justify-center gap-3"
+      >
+        <span>Start Jamming</span>
+        <span className="text-3xl">🎵</span>
+      </Link>
+
+      {/* Features */}
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl">
+        <div className="text-center p-4">
+          <div className="text-4xl mb-2">🎹</div>
+          <h3 className="text-white font-semibold mb-1">AI Backing Tracks</h3>
+          <p className="text-slate-400 text-sm">
+            Generate bass, harmony, and rhythm layers instantly
           </p>
-          {errorMessage && (
-            <p className="text-red-400 mt-2">{errorMessage}</p>
-          )}
         </div>
-
-        {/* Main action button */}
-        {status === "idle" || status === "disconnected" ? (
-          <button
-            onClick={startConversation}
-            className="w-64 h-20 bg-red-600 hover:bg-red-700 text-white text-2xl font-bold rounded-2xl shadow-lg transform hover:scale-105 transition-all active:scale-95"
-          >
-            🆘 GET HELP
-          </button>
-        ) : status === "connecting" ? (
-          <button
-            disabled
-            className="w-64 h-20 bg-yellow-600 text-white text-2xl font-bold rounded-2xl shadow-lg cursor-not-allowed"
-          >
-            Connecting...
-          </button>
-        ) : (
-          <button
-            onClick={endConversation}
-            className="w-64 h-20 bg-slate-600 hover:bg-slate-700 text-white text-xl font-bold rounded-2xl shadow-lg transform hover:scale-105 transition-all active:scale-95"
-          >
-            End Call
-          </button>
-        )}
+        <div className="text-center p-4">
+          <div className="text-4xl mb-2">🎙️</div>
+          <h3 className="text-white font-semibold mb-1">Record Your Improv</h3>
+          <p className="text-slate-400 text-sm">
+            Sing, scat, or hum over the AI-generated tracks
+          </p>
+        </div>
+        <div className="text-center p-4">
+          <div className="text-4xl mb-2">🎯</div>
+          <h3 className="text-white font-semibold mb-1">AI Coach Feedback</h3>
+          <p className="text-slate-400 text-sm">
+            Get tips to improve your vocal technique
+          </p>
+        </div>
       </div>
 
-      {/* Instructions */}
-      <div className="mt-12 text-center text-slate-400 max-w-md">
-        <p className="text-sm">
-          Speak in your native language. Our AI assistant will understand and
-          help coordinate emergency response.
-        </p>
-      </div>
-
-      {/* Language support indicator */}
-      <div className="mt-8 flex flex-wrap justify-center gap-2">
-        {["EN", "中文", "ES", "हिंदी", "عربي", "PT", "日本語", "한국어"].map(
-          (lang) => (
+      {/* Genre tags */}
+      <div className="mt-12 flex flex-wrap justify-center gap-2">
+        {["Doo-Wop", "Gospel", "Barbershop", "Lo-Fi", "Jazz", "Pop"].map(
+          (genre) => (
             <span
-              key={lang}
-              className="px-3 py-1 bg-slate-700 text-slate-300 rounded-full text-sm"
+              key={genre}
+              className="px-4 py-2 bg-slate-700/50 text-slate-300 rounded-full text-sm
+                         border border-slate-600 hover:border-purple-500 transition-colors cursor-default"
             >
-              {lang}
+              {genre}
             </span>
           )
         )}
       </div>
+
+      {/* Tagline */}
+      <p className="mt-12 text-slate-500 text-sm">
+        Powered by ElevenLabs AI
+      </p>
     </div>
   );
 }

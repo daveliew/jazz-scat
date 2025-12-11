@@ -1,89 +1,141 @@
-# VoiceLifeline - Working Plan
+# Music Genie - Working Plan
 
-> **Status**: Idea still evolving - this document captures our thinking
+> **Status**: MVP Built - Polish & Demo Prep
+> **Hackathon**: ElevenLabs AI Agents Hackathon 2025
 
 ## The Problem
 
-Language barriers in emergencies can be fatal. When someone is in distress:
-- They may not speak the local language
-- Stress impairs communication ability
-- Emergency services may not understand them
-- Critical information gets lost in translation
+Learning to sing, harmonize, or improvise is hard without:
+- A band or vocal group to practice with
+- A coach to give real-time feedback
+- Backing tracks that match your style and tempo
 
-**Real-world example**: Hong Kong fire (2025) - victims struggled to communicate with emergency responders due to language barriers.
+**Result**: Most people never develop their musical potential because practice alone is boring and unproductive.
 
-## Our Solution: VoiceLifeline
+## Our Solution: Music Genie
 
-A voice-first emergency communication tool that:
-1. Accepts voice input in ANY language
-2. AI assistant gathers critical emergency info
-3. Provides calm, clear guidance
-4. Can relay information to emergency services
+An AI-powered jam session that lets you practice like a pro:
+1. **Generate AI backing tracks** (bass, harmony, rhythm vocals)
+2. **Record your improv** over the tracks
+3. **Get AI coach feedback** to improve
+
+No band needed. No expensive coach. Just you and the Genie.
 
 ## Core User Flow
 
 ```
-User in distress
-    ↓
-Opens VoiceLifeline (mobile web)
-    ↓
-Presses "GET HELP" button
-    ↓
-Speaks in their native language
-    ↓
-AI asks: What's happening? Where are you? Are you safe?
-    ↓
-AI provides immediate safety guidance
-    ↓
-Information ready for emergency services
+User wants to practice
+    |
+Opens Music Genie
+    |
+Selects genre + BPM (doo-wop, gospel, jazz, etc.)
+    |
+Generates AI backing tracks (bass, harmony, rhythm)
+    |
+Plays all tracks together
+    |
+Records their vocal improv (30 sec max)
+    |
+AI Coach analyzes and gives feedback + tips
+    |
+Iterate and improve!
 ```
 
-## Ideas We're Exploring
+## What's Built
 
-### MVP (Hackathon)
-- [x] Voice conversation with ElevenLabs AI
-- [x] Multilingual support
-- [x] Emergency-focused UI
-- [ ] Summary generation for responders
+### MVP (Complete)
 
-### Future Possibilities
-- [ ] SMS/location sharing to emergency contacts
-- [ ] Integration with local emergency services
-- [ ] Offline mode for disaster scenarios
-- [ ] Wearable device integration
-- [ ] Multi-party calls (victim + responder + translator)
+- [x] Landing page with "Start Jamming" CTA
+- [x] Genre selector (6 genres: doo-wop, gospel, barbershop, lo-fi, jazz, pop)
+- [x] BPM control with genre-appropriate ranges
+- [x] AI layer generation (ElevenLabs Music API)
+  - Bass line
+  - Harmony vocals
+  - Rhythm/beatbox
+- [x] Audio mixer with volume/mute per layer
+- [x] Play all / Stop all controls
+- [x] User recording (mic capture, 30s max)
+- [x] AI Coach feedback (rule-based analysis)
+- [x] New session reset
 
-## Open Questions
+### ElevenLabs APIs Used
 
-1. **Target users**: Tourists? Migrant workers? Elderly?
-2. **Distribution**: How do people find this in an emergency?
-3. **Trust**: How do we establish credibility quickly?
-4. **Offline**: What happens without internet?
+| API | Purpose |
+|-----|---------|
+| `music.compose()` | Generate backing track layers |
+| `speechToText.convert()` | Transcribe user vocals for analysis |
+
+### To Polish
+
+- [ ] Test full flow end-to-end
+- [ ] Improve AI coach feedback (consider Claude for deeper analysis)
+- [ ] Add looping for backing tracks
+- [ ] Mobile responsiveness check
+- [ ] Error handling polish
+
+## Future Ideas (Post-Hackathon)
+
+- [ ] Instrument tracks (guitar, piano, drums)
+- [ ] Song structure mode (verse, chorus, bridge)
+- [ ] Save and share jam sessions
+- [ ] Voice-to-MIDI conversion
+- [ ] Pitch accuracy scoring
+- [ ] Battle mode (compete with friends)
+
+## Technical Architecture
+
+```
+/src
+├── app/
+│   ├── page.tsx              # Landing page
+│   ├── improv/page.tsx       # Main jam session
+│   └── api/
+│       ├── generate-layer/   # ElevenLabs music generation
+│       └── analyze-improv/   # Transcription + feedback
+├── components/improv/
+│   ├── GenreSelector.tsx     # Genre + BPM controls
+│   ├── LayerMixer.tsx        # Track layer controls
+│   ├── TrackLayer.tsx        # Individual layer UI
+│   └── CoachFeedback.tsx     # AI feedback display
+├── lib/
+│   ├── elevenlabs.ts         # API client + helpers
+│   └── audio-mixer.ts        # Web Audio API mixer
+└── types/
+    └── improv.ts             # TypeScript types
+```
+
+## Demo Script
+
+> "Ever wanted to sing harmony but had no one to practice with?"
+
+1. Open Music Genie - see the landing page
+2. Click "Start Jamming"
+3. Pick a genre (Doo-Wop for demo appeal)
+4. Generate each backing layer - show AI creating bass, harmony, rhythm
+5. Hit "Play All" - hear the full backing track
+6. Record a quick vocal improv
+7. Click "Get Feedback" - AI coach gives tips
+8. "Now anyone can practice like a pro, anytime, anywhere."
 
 ## Judging Criteria Alignment
 
 | Criteria | Our Strategy | Confidence |
 |----------|-------------|------------|
-| Working Prototype | Focus on ONE flow, polish it | High |
-| Technical Complexity | Voice AI + multilingual + real-time | Medium-High |
-| Innovation | Emergency + language barrier = novel | High |
-| Real-World Impact | Life-saving potential | Very High |
-| Theme Alignment | Conversational agent is core | High |
+| Working Prototype | Full flow works end-to-end | High |
+| Technical Complexity | Music AI + Audio mixing + Analysis | High |
+| Innovation | AI band-in-a-box for practice | High |
+| Real-World Impact | Democratize music education | High |
+| ElevenLabs Integration | Core to product (Music + STT) | Very High |
 
-## Demo Script
+## Quick Commands
 
-> "Imagine you're traveling in a foreign country. There's a fire in your building. You don't speak the language. What do you do?"
+```bash
+# Dev server
+npm run dev
 
-1. Open VoiceLifeline on your phone
-2. Press the big red "GET HELP" button
-3. Speak in YOUR language: "There's a fire! I'm trapped!"
-4. The AI calmly asks for your location, if you're safe
-5. Provides immediate guidance while help is coordinated
+# Type check
+npm run typecheck
 
-## Next Steps
-
-- [ ] Configure ElevenLabs agent with emergency prompt
-- [ ] Test multilingual conversation flow
-- [ ] Add conversation summary feature
-- [ ] Polish mobile experience
-- [ ] Prepare demo environment
+# Lint
+npm run lint
+```
