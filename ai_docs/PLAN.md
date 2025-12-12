@@ -57,6 +57,9 @@ User can request changes or new tracks
 - [x] Looping audio playback
 - [x] Session log display
 - [x] Visual state indicators (orb animation)
+- [x] Live speech-to-text feedback (useScribe)
+- [x] Mute DJ toggle during playback
+- [x] Playback controls (pause/resume/stop)
 
 ### Layer-by-Layer Mode (/improv) ✅
 
@@ -74,6 +77,7 @@ User can request changes or new tracks
 | Conversational AI | Voice DJ that interprets requests |
 | Sound Generation | Creates backing tracks from text prompts |
 | Client Tools | `generate_backing_track` - triggers audio generation |
+| Scribe (Speech-to-Text) | Live transcription feedback in session log |
 
 ### To Polish
 
@@ -100,6 +104,7 @@ User can request changes or new tracks
 │   ├── improv/page.tsx       # Layer-by-layer mode
 │   └── api/
 │       ├── conversation-token/   # WebRTC auth
+│       ├── scribe-token/         # Speech-to-text auth
 │       ├── sound-generation/     # Text-to-audio
 │       ├── generate-layer/       # Individual layers
 │       └── analyze-improv/       # Vocal feedback
