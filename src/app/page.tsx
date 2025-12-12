@@ -64,6 +64,13 @@ export default function Home() {
   const [backingTrackUrl, setBackingTrackUrl] = useState<string | null>(null);
   const [backingTrackPaused, setBackingTrackPaused] = useState(false);
 
+  // DJ mute state
+  const [isDjMuted, setIsDjMuted] = useState(false);
+
+  // iOS audio unlock state
+  const [isAudioUnlocked, setIsAudioUnlocked] = useState(false);
+  const [needsManualPlay, setNeedsManualPlay] = useState(false);
+
   // Refs
   const mixerRef = useRef<AudioMixer | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -79,6 +86,30 @@ export default function Home() {
     };
   }, []);
 
+  // iOS Audio Unlock - call this on first user tap to enable audio playback
+  // iOS Safari blocks audio.play() unless it's directly triggered by a user gesture
+  const unlockAudioForIOS = useCallback(async () => {
+    if (isAudioUnlocked) return;
+
+    // Pre-warm the audio element with a silent audio play
+    if (backingTrackRef.current) {
+      // Tiny silent MP3 (base64 encoded)
+      const silentAudio = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRBqpAAAAAAD/+xDEAAPAAADSAAAAAAgAADSAAAAETEFNRTMuMTAwVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//sQxBoDwAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV';
+      backingTrackRef.current.src = silentAudio;
+      backingTrackRef.current.volume = 0;
+      try {
+        await backingTrackRef.current.play();
+        backingTrackRef.current.pause();
+        backingTrackRef.current.volume = 1;
+        backingTrackRef.current.src = '';
+        setIsAudioUnlocked(true);
+        console.log('🔓 iOS audio unlocked successfully');
+      } catch (e) {
+        console.log('🔒 Audio unlock skipped (may not be iOS or already unlocked):', e);
+      }
+    }
+  }, [isAudioUnlocked]);
+
   // Toggle backing track pause/resume
   const toggleBackingTrack = useCallback(() => {
     if (!backingTrackRef.current || !backingTrackUrl) return;
@@ -93,6 +124,11 @@ export default function Home() {
       setStatusText('Track paused');
     }
   }, [backingTrackPaused, backingTrackUrl]);
+
+  // Toggle DJ mute
+  const toggleDjMute = useCallback(() => {
+    setIsDjMuted(prev => !prev);
+  }, []);
 
   // Keyboard shortcuts (spacebar to toggle playback)
   useEffect(() => {
@@ -188,6 +224,7 @@ export default function Home() {
     setIsPlaying(false);
     setBackingTrackPaused(false);
     setBackingTrackUrl(null);
+    setIsDjMuted(false);
     setStatusText('Stopped');
 
     if (isConnected) {
@@ -486,6 +523,13 @@ export default function Home() {
     }
   }, [conversation.isSpeaking, isConnected, appState]);
 
+  // Sync DJ mute state with conversation volume
+  useEffect(() => {
+    if (isConnected) {
+      conversation.setVolume({ volume: isDjMuted ? 0 : 1 });
+    }
+  }, [isDjMuted, isConnected, conversation]);
+
   const startConversation = useCallback(async () => {
     try {
       setAppState('connecting');
@@ -675,6 +719,19 @@ export default function Home() {
             >
               ⏹️ Stop
             </button>
+            {isConnected && (
+              <button
+                onClick={toggleDjMute}
+                className={`px-6 py-2 rounded-full text-white font-semibold transition-all transform hover:scale-105 active:scale-95
+                           flex items-center gap-2 ${
+                             isDjMuted
+                               ? 'bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500'
+                               : 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600'
+                           }`}
+              >
+                {isDjMuted ? '🔇 Unmute DJ' : '🔊 Mute DJ'}
+              </button>
+            )}
             {!isRecordingLayer && (
               <button
                 onClick={startRecording}
