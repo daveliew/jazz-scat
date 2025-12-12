@@ -36,6 +36,16 @@ interface RecordedLayer {
   isPlaying: boolean;
 }
 
+// AI-generated instrument layers (from DJ)
+interface AIInstrumentLayer {
+  id: string;
+  instrument: string;  // e.g., "piano", "drums", "bass", "saxophone"
+  prompt: string;      // The generation prompt used
+  audioUrl: string;
+  audioElement: HTMLAudioElement | null;
+  isPlaying: boolean;
+}
+
 // Session log entries
 interface LogEntry {
   role: 'user' | 'agent';
@@ -63,6 +73,9 @@ export default function Home() {
   // Multi-layer looper state
   const [recordedLayers, setRecordedLayers] = useState<RecordedLayer[]>([]);
   const [isRecordingLayer, setIsRecordingLayer] = useState(false); // Track recording independently
+
+  // AI-generated instrument layers (DJ can add piano, drums, etc. that layer together)
+  const [aiLayers, setAiLayers] = useState<AIInstrumentLayer[]>([]);
 
   // Session log state
   const [sessionLog, setSessionLog] = useState<LogEntry[]>([]);
@@ -240,10 +253,19 @@ export default function Home() {
       }
     });
 
+    // Stop all AI instrument layers
+    aiLayers.forEach(layer => {
+      if (layer.audioElement) {
+        layer.audioElement.pause();
+        layer.audioElement.currentTime = 0;
+      }
+    });
+
     // Reset state
     setIsPlaying(false);
     setBackingTrackPaused(false);
     setBackingTrackUrl(null);
+    setAiLayers([]); // Clear AI layers on stop
     setIsDjMuted(false);
     setStatusText('Stopped');
 
@@ -253,7 +275,7 @@ export default function Home() {
     } else {
       setAppState('idle');
     }
-  }, [isConnected, recordedLayers]);
+  }, [isConnected, recordedLayers, aiLayers]);
 
   const startRecording = useCallback(async () => {
     // Only change appState if not already playing (allows layering while track plays)
@@ -374,6 +396,56 @@ export default function Home() {
       }
       return prev.filter(l => l.id !== layerId);
     });
+  }, []);
+
+  // AI layer controls
+  const playAiLayer = useCallback((layerId: string) => {
+    setAiLayers(prev =>
+      prev.map(layer => {
+        if (layer.id === layerId && layer.audioElement) {
+          layer.audioElement.play();
+          return { ...layer, isPlaying: true };
+        }
+        return layer;
+      })
+    );
+  }, []);
+
+  const pauseAiLayer = useCallback((layerId: string) => {
+    setAiLayers(prev =>
+      prev.map(layer => {
+        if (layer.id === layerId && layer.audioElement) {
+          layer.audioElement.pause();
+          return { ...layer, isPlaying: false };
+        }
+        return layer;
+      })
+    );
+  }, []);
+
+  const deleteAiLayer = useCallback((layerId: string) => {
+    setAiLayers(prev => {
+      const layer = prev.find(l => l.id === layerId);
+      if (layer?.audioElement) {
+        layer.audioElement.pause();
+        URL.revokeObjectURL(layer.audioUrl);
+      }
+      return prev.filter(l => l.id !== layerId);
+    });
+  }, []);
+
+  // Play all AI layers together
+  const playAllAiLayers = useCallback(() => {
+    setAiLayers(prev =>
+      prev.map(layer => {
+        if (layer.audioElement) {
+          layer.audioElement.currentTime = 0; // Sync start
+          layer.audioElement.play();
+        }
+        return { ...layer, isPlaying: true };
+      })
+    );
+    setIsPlaying(true);
   }, []);
 
   // Generate backing track using Sound Generation API (called by clientTools)
@@ -597,7 +669,9 @@ export default function Home() {
         console.log('Agent called generate_backing_track with:', prompt);
         try {
           const result = await generateBackingTrack(prompt);
-          return result;
+          // Return prompt in response so DJ can remember what was generated
+          // This helps DJ build on previous instruments when user asks to "add" more
+          return `${result} Current track: "${prompt}"`;
         } catch (err) {
           console.error('Tool error:', err);
           return 'Sorry, sound generation encountered an error. Please try again.';
@@ -607,7 +681,8 @@ export default function Home() {
         console.log('Agent called make_music with:', prompt);
         try {
           const result = await makeMusic(prompt);
-          return result;
+          // Return prompt in response so DJ can remember what was generated
+          return `${result} Current track: "${prompt}"`;
         } catch (err) {
           console.error('Tool error:', err);
           return 'Sorry, music composition encountered an error. Please try again.';
@@ -677,6 +752,65 @@ export default function Home() {
         setIsRecordingLayer(false);
         const layerCount = recordedLayers.length + 1; // +1 for the one being saved
         return `Layer saved! You now have ${layerCount} recorded layer${layerCount > 1 ? 's' : ''}. Want to add another?`;
+      },
+      // Add AI instrument layer - generates and layers a new instrument track
+      add_instrument_layer: async ({ instrument, style }: { instrument: string; style: string }) => {
+        console.log(`🎹 Agent called add_instrument_layer: ${instrument} in style: ${style}`);
+        setAppState('generating');
+        setStatusText(`Adding ${instrument}...`);
+
+        try {
+          // Generate the instrument layer
+          const prompt = `${style} ${instrument} loop, instrumental, high quality`;
+          const response = await fetch('/api/sound-generation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              text: prompt,
+              duration_seconds: 15,
+              prompt_influence: 0.5,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`Sound generation failed: ${response.status}`);
+          }
+
+          const blob = await response.blob();
+          const audioUrl = URL.createObjectURL(blob);
+
+          // Create audio element for this layer
+          const audioElement = new Audio(audioUrl);
+          audioElement.loop = true;
+
+          // If other layers are playing, start this one too
+          const shouldAutoPlay = aiLayers.some(l => l.isPlaying) || isPlaying;
+          if (shouldAutoPlay) {
+            audioElement.play().catch(console.warn);
+          }
+
+          const newLayer: AIInstrumentLayer = {
+            id: `ai-${instrument}-${Date.now()}`,
+            instrument,
+            prompt,
+            audioUrl,
+            audioElement,
+            isPlaying: shouldAutoPlay,
+          };
+
+          setAiLayers(prev => [...prev, newLayer]);
+          setAppState(isConnected ? 'listening' : 'idle');
+          setStatusText(shouldAutoPlay ? `${instrument} added and playing!` : `${instrument} ready!`);
+
+          // Return layer info so DJ can track what's been added
+          const allInstruments = [...aiLayers.map(l => l.instrument), instrument];
+          return `Added ${instrument}! Current AI layers: ${allInstruments.join(', ')}. ${shouldAutoPlay ? 'Playing now.' : 'Ready to play.'}`;
+        } catch (err) {
+          console.error('Add instrument layer error:', err);
+          setAppState(isConnected ? 'listening' : 'idle');
+          setStatusText('Failed to add layer');
+          return `Sorry, couldn't add ${instrument}. Please try again.`;
+        }
       },
     },
     onConnect: async () => {
@@ -880,7 +1014,7 @@ export default function Home() {
               className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-700/30 transition-colors text-sm font-medium"
             >
               <span>🎚️</span>
-              <span>Layer Builder</span>
+              <span>Improv</span>
             </Link>
           </div>
         </div>
@@ -1084,6 +1218,58 @@ export default function Home() {
                       🎤 Add Layer
                     </button>
                   )}
+                </div>
+              </div>
+            )}
+
+            {/* AI Instrument Layers */}
+            {aiLayers.length > 0 && (
+              <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                    🎹 AI Instruments
+                  </h2>
+                  {aiLayers.length > 1 && (
+                    <button
+                      onClick={playAllAiLayers}
+                      className="px-3 py-1 bg-purple-600 hover:bg-purple-500 rounded text-xs font-medium transition-colors"
+                    >
+                      ▶️ Play All
+                    </button>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  {aiLayers.map((layer) => (
+                    <div
+                      key={layer.id}
+                      className="flex items-center gap-3 bg-purple-900/20 border border-purple-500/30 rounded-lg p-3"
+                    >
+                      <span className="text-purple-300 text-sm font-medium capitalize">{layer.instrument}</span>
+                      <div className="flex gap-2 ml-auto">
+                        {layer.isPlaying ? (
+                          <button
+                            onClick={() => pauseAiLayer(layer.id)}
+                            className="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 rounded text-sm transition-colors"
+                          >
+                            ⏸️
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => playAiLayer(layer.id)}
+                            className="px-3 py-1.5 bg-green-600 hover:bg-green-500 rounded text-sm transition-colors"
+                          >
+                            ▶️
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteAiLayer(layer.id)}
+                          className="px-3 py-1.5 bg-red-600/50 hover:bg-red-500 rounded text-sm transition-colors"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
