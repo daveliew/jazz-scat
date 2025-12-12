@@ -7,7 +7,6 @@ import { GenreSelector } from '@/components/improv/GenreSelector';
 import { LayerMixer } from '@/components/improv/LayerMixer';
 import { CoachFeedback } from '@/components/improv/CoachFeedback';
 import { VoiceCoach } from '@/components/improv/VoiceCoach';
-import { Metronome } from '@/components/improv/Metronome';
 import {
   Genre,
   TrackLayer,
@@ -398,14 +397,13 @@ export default function ImprovPage() {
           />
         </div>
 
-        {/* Voice Coach + Metronome */}
-        <div className="mb-6 space-y-4">
+        {/* Voice Coach */}
+        <div className="mb-6">
           <VoiceCoach
             genre={genre}
             bpm={bpm}
             activeLayers={layers.filter(l => l.audioUrl && l.type !== 'user').map(l => l.type)}
           />
-          <Metronome bpm={bpm} />
         </div>
 
         {/* New Session Button */}
