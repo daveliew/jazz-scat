@@ -5,6 +5,13 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { getAudioMixer, AudioMixer } from '@/lib/audio-mixer';
 import Link from 'next/link';
 
+// iOS detection - all iOS browsers use WebKit
+const isIOSDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+
 type AppState =
   | 'idle'
   | 'connecting'
@@ -90,6 +97,13 @@ export default function Home() {
   // iOS Safari blocks audio.play() unless it's directly triggered by a user gesture
   const unlockAudioForIOS = useCallback(async () => {
     if (isAudioUnlocked) return;
+
+    // Only needed on iOS - desktop browsers don't block autoplay from user gesture
+    if (!isIOSDevice()) {
+      console.log('🔓 Skipping audio unlock (not iOS)');
+      setIsAudioUnlocked(true);
+      return;
+    }
 
     // Pre-warm the audio element with a silent audio play
     if (backingTrackRef.current) {
