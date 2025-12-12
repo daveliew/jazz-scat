@@ -260,6 +260,9 @@ export default function Home() {
     setIsRecordingLayer(true);
     setStatusText('Recording your layer...');
 
+    // Auto-mute DJ during recording to prevent voice triggering responses
+    setIsDjMuted(true);
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mediaRecorder = new MediaRecorder(stream);
@@ -317,6 +320,10 @@ export default function Home() {
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop();
       setIsRecordingLayer(false);
+
+      // Auto-unmute DJ after recording
+      setIsDjMuted(false);
+
       // If backing track is playing, stay in playing state (layering mode)
       if (isPlaying) {
         setStatusText('Saving layer...');
@@ -750,288 +757,304 @@ export default function Home() {
   const hasLayers = layers.some(l => l.audioUrl);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
-          Jazz Scat
-        </h1>
-        <p className="text-slate-300 text-xl max-w-md mx-auto">
-          {isConnected ? statusText || 'Your AI jam partner is ready' : 'Practice like a pro. AI-generated backing tracks + real-time coaching.'}
-        </p>
-      </div>
-
-      {/* Visual element - Animated rings */}
-      <div className="relative w-56 h-56 md:w-72 md:h-72 mb-8">
-        {/* Animated rings */}
-        <div className={`absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-20 ${getRingAnimation()}`} />
-        <div className={`absolute inset-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-30 ${appState !== 'idle' ? 'animate-pulse' : ''}`} />
-        <div className="absolute inset-8 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 opacity-50" />
-
-        {/* Center icon */}
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-7xl md:text-8xl">
-            {appState === 'idle' && '🎤'}
-            {appState === 'connecting' && '⏳'}
-            {appState === 'listening' && '👂'}
-            {appState === 'processing' && '🤔'}
-            {appState === 'speaking' && '🗣️'}
-            {appState === 'generating' && '✨'}
-            {appState === 'playing' && '🎵'}
-            {appState === 'recording' && '🔴'}
-          </span>
-        </div>
-      </div>
-
-      {/* Main CTA Button */}
-      <button
-        onClick={isConnected ? endConversation : startConversation}
-        disabled={appState === 'connecting'}
-        className={`w-72 h-20 text-white text-2xl font-bold rounded-2xl shadow-lg
-                    transform hover:scale-105 transition-all active:scale-95
-                    flex items-center justify-center gap-3
-                    ${isConnected
-                      ? 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600 shadow-slate-500/25'
-                      : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 shadow-purple-500/25'}
-                    ${appState === 'connecting' ? 'cursor-wait opacity-80' : ''}`}
-      >
-        {appState === 'connecting' ? (
-          <>
-            <span>Connecting...</span>
-            <span className="text-3xl animate-spin">⏳</span>
-          </>
-        ) : isConnected ? (
-          <>
-            <span>End Session</span>
-            <span className="text-3xl">👋</span>
-          </>
-        ) : (
-          <>
-            <span>Start Jamming</span>
-            <span className="text-3xl">🎵</span>
-          </>
-        )}
-      </button>
-
-      {/* Error */}
-      {error && (
-        <p className="mt-4 text-red-400 text-sm">{error}</p>
-      )}
-
-      {/* iOS Manual Play Button - shown when autoplay is blocked */}
-      {needsManualPlay && backingTrackUrl && (
-        <button
-          onClick={async () => {
-            if (backingTrackRef.current) {
-              try {
-                await backingTrackRef.current.play();
-                setNeedsManualPlay(false);
-                setIsPlaying(true);
-                setStatusText('Track playing!');
-              } catch (e) {
-                console.error('Manual play failed:', e);
-                setStatusText('Playback failed. Try again.');
-              }
-            }
-          }}
-          className="mt-6 px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500
-                     rounded-2xl text-white text-xl font-bold shadow-lg shadow-green-500/25
-                     transform hover:scale-105 transition-all active:scale-95
-                     flex items-center gap-3 animate-pulse"
-        >
-          <span>▶️</span>
-          <span>Tap to Play Track</span>
-        </button>
-      )}
-
-      {/* Layer indicators */}
-      {hasLayers && (
-        <div className="mt-8 flex gap-3">
-          {layers.map(layer => (
-            <div
-              key={layer.id}
-              className={`px-3 py-1 rounded-full text-sm ${
-                layer.audioUrl
-                  ? 'bg-green-500/20 text-green-400 border border-green-500/50'
-                  : 'bg-slate-700/50 text-slate-500 border border-slate-600'
-              }`}
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Header - Full Width */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
+              Jazz Scat
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              {isConnected ? statusText || 'Your AI jam partner is ready' : 'AI-generated backing tracks + real-time coaching'}
+            </p>
+          </div>
+          <div className="flex rounded-xl overflow-hidden border border-slate-700/50 bg-slate-800/30 self-start sm:self-auto">
+            <Link
+              href="/"
+              className="flex items-center gap-2 px-4 py-2 bg-purple-600/20 text-purple-300 text-sm font-medium border-r border-slate-700/50"
             >
-              {layer.type}
+              <span>🎤</span>
+              <span>Voice DJ</span>
+            </Link>
+            <Link
+              href="/improv"
+              className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-700/30 transition-colors text-sm font-medium"
+            >
+              <span>🎚️</span>
+              <span>Layer Builder</span>
+            </Link>
+          </div>
+        </div>
+
+        {/* Recording Mode Banner */}
+        {isRecordingLayer && (
+          <div className="mb-6 p-3 bg-red-900/30 border border-red-500/50 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-red-400 animate-pulse text-xl">🔴</span>
+              <span className="text-red-300 font-medium">Recording Mode - DJ Paused</span>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Playing controls */}
-      {isPlaying && (
-        <div className="mt-4 flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2 text-pink-400">
-            <span className={backingTrackPaused ? '' : 'animate-pulse'}>●</span>
-            <span>{backingTrackPaused ? 'Paused' : 'Playing'}{backingTrackUrl ? ' (Backing Track)' : ''}</span>
-          </div>
-          <div className="flex gap-3">
             <button
-              onClick={toggleBackingTrack}
-              className="px-6 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500
-                         rounded-full text-white font-semibold transition-all transform hover:scale-105 active:scale-95
-                         flex items-center gap-2"
+              onClick={stopRecording}
+              className="px-4 py-1.5 bg-red-600 hover:bg-red-500 rounded-lg text-sm font-medium transition-colors"
             >
-              {backingTrackPaused ? (
-                <>▶️ Resume</>
-              ) : (
-                <>⏸️ Pause</>
-              )}
+              Stop Recording
             </button>
-            <button
-              onClick={stopAll}
-              className="px-6 py-2 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600
-                         rounded-full text-white font-semibold transition-all transform hover:scale-105 active:scale-95
-                         flex items-center gap-2"
-            >
-              ⏹️ Stop
-            </button>
-            {isConnected && (
-              <button
-                onClick={toggleDjMute}
-                className={`px-6 py-2 rounded-full text-white font-semibold transition-all transform hover:scale-105 active:scale-95
-                           flex items-center gap-2 ${
-                             isDjMuted
-                               ? 'bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500'
-                               : 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600'
-                           }`}
-              >
-                {isDjMuted ? '🔇 Unmute DJ' : '🔊 Mute DJ'}
-              </button>
-            )}
-            {!isRecordingLayer && (
-              <button
-                onClick={startRecording}
-                className="px-6 py-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500
-                           rounded-full text-white font-semibold transition-all transform hover:scale-105 active:scale-95
-                           flex items-center gap-2"
-              >
-                🎤 Add Layer
-              </button>
-            )}
-            {isRecordingLayer && (
-              <button
-                onClick={stopRecording}
-                className="px-6 py-2 bg-red-600 hover:bg-red-500 animate-pulse
-                           rounded-full text-white font-semibold transition-all
-                           flex items-center gap-2"
-              >
-                ⏹️ Stop Recording
-              </button>
-            )}
           </div>
-          <span className="text-slate-500 text-xs">spacebar to pause/resume</span>
-        </div>
-      )}
+        )}
 
-      {/* Instructions - only when idle */}
-      {appState === 'idle' && (
-        <div className="mt-8 text-center">
-          <p className="text-slate-500 text-sm">Tap the button to start a voice conversation with your AI jam partner</p>
-        </div>
-      )}
-
-      {/* Footer Mode Tabs */}
-      <div className="mt-8 flex rounded-xl overflow-hidden border border-slate-700/50 bg-slate-800/30">
-        <Link
-          href="/"
-          className="flex items-center gap-2 px-6 py-3 bg-purple-600/20 text-purple-300 border-r border-slate-700/50 font-medium"
-        >
-          <span>🎤</span>
-          <span>Voice DJ</span>
-        </Link>
-        <Link
-          href="/improv"
-          className="flex items-center gap-2 px-6 py-3 text-slate-400 hover:text-white hover:bg-slate-700/30 transition-colors font-medium"
-        >
-          <span>🎚️</span>
-          <span>Layer Builder</span>
-        </Link>
-      </div>
-
-      {/* Session Log */}
-      {(sessionLog.length > 0 || (isConnected && appState === 'listening')) && (
-        <div className="mt-8 w-full max-w-md">
-          <h3 className="text-sm font-semibold text-slate-400 mb-2">Session Log</h3>
-          <div
-            ref={sessionLogRef}
-            className="bg-slate-800/50 rounded-lg p-3 max-h-32 overflow-y-auto border border-slate-700"
-          >
-            {/* Log entries - chronological order (oldest first) */}
-            {sessionLog.map((entry, index) => (
-              <div key={index} className="text-sm mb-1">
-                <span className={entry.role === 'agent' ? 'text-purple-400' : 'text-blue-400'}>
-                  {entry.role === 'agent' ? '🎵 DJ: ' : '🎤 You: '}
-                </span>
-                <span className="text-slate-300">{entry.text}</span>
-              </div>
-            ))}
-            {/* Live speech-to-text - at bottom, auto-scrolls into view */}
-            {appState === 'listening' && isConnected && (
-              <div className="text-sm mb-1">
-                <span className="text-blue-400">🎤 You: </span>
-                {liveTranscript ? (
-                  <span className="text-slate-300">{liveTranscript}</span>
-                ) : (
-                  <span className="text-slate-500 italic animate-pulse">Listening...</span>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Recorded Layers (Looper) */}
-      {recordedLayers.length > 0 && (
-        <div className="mt-6 w-full max-w-md">
-          <h3 className="text-sm font-semibold text-slate-400 mb-2">Your Recordings</h3>
-          <div className="space-y-2">
-            {recordedLayers.map((layer, index) => (
-              <div
-                key={layer.id}
-                className="flex items-center gap-3 bg-slate-800/50 rounded-lg p-3 border border-slate-700"
-              >
-                <span className="text-slate-400 text-sm">Layer {index + 1}</span>
-                <div className="flex gap-2 ml-auto">
-                  {layer.isPlaying ? (
-                    <button
-                      onClick={() => pauseRecordedLayer(layer.id)}
-                      className="px-3 py-1 bg-yellow-600 hover:bg-yellow-500 rounded text-sm transition-colors"
-                    >
-                      ⏸️ Pause
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => playRecordedLayer(layer.id)}
-                      className="px-3 py-1 bg-green-600 hover:bg-green-500 rounded text-sm transition-colors"
-                    >
-                      ▶️ Play
-                    </button>
-                  )}
-                  <button
-                    onClick={() => deleteRecordedLayer(layer.id)}
-                    className="px-3 py-1 bg-red-600 hover:bg-red-500 rounded text-sm transition-colors"
-                  >
-                    🗑️
-                  </button>
+        {/* Two-Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+          {/* Main Column: Music Controls */}
+          <main className="space-y-6">
+            {/* Visual Element + Main CTA */}
+            <div className="flex flex-col items-center p-8 bg-slate-800/30 rounded-xl border border-slate-700/50">
+              {/* Animated rings */}
+              <div className="relative w-40 h-40 md:w-48 md:h-48 mb-6">
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-20 ${getRingAnimation()}`} />
+                <div className={`absolute inset-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-30 ${appState !== 'idle' ? 'animate-pulse' : ''}`} />
+                <div className="absolute inset-6 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 opacity-50" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-5xl md:text-6xl">
+                    {appState === 'idle' && '🎤'}
+                    {appState === 'connecting' && '⏳'}
+                    {appState === 'listening' && '👂'}
+                    {appState === 'processing' && '🤔'}
+                    {appState === 'speaking' && '🗣️'}
+                    {appState === 'generating' && '✨'}
+                    {appState === 'playing' && '🎵'}
+                    {appState === 'recording' && '🔴'}
+                  </span>
                 </div>
               </div>
-            ))}
-          </div>
+
+              {/* Main CTA Button */}
+              <button
+                onClick={isConnected ? endConversation : startConversation}
+                disabled={appState === 'connecting'}
+                className={`w-64 h-16 text-white text-xl font-bold rounded-xl shadow-lg
+                            transform hover:scale-105 transition-all active:scale-95
+                            flex items-center justify-center gap-3
+                            ${isConnected
+                              ? 'bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600'
+                              : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500'}
+                            ${appState === 'connecting' ? 'cursor-wait opacity-80' : ''}`}
+              >
+                {appState === 'connecting' ? (
+                  <>Connecting... <span className="animate-spin">⏳</span></>
+                ) : isConnected ? (
+                  <>End Session 👋</>
+                ) : (
+                  <>Start Jamming 🎵</>
+                )}
+              </button>
+
+              {error && <p className="mt-3 text-red-400 text-sm">{error}</p>}
+
+              {/* iOS Manual Play Button */}
+              {needsManualPlay && backingTrackUrl && (
+                <button
+                  onClick={async () => {
+                    if (backingTrackRef.current) {
+                      try {
+                        await backingTrackRef.current.play();
+                        setNeedsManualPlay(false);
+                        setIsPlaying(true);
+                        setStatusText('Track playing!');
+                      } catch (e) {
+                        console.error('Manual play failed:', e);
+                      }
+                    }
+                  }}
+                  className="mt-4 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500
+                             rounded-xl text-white font-bold shadow-lg animate-pulse flex items-center gap-2"
+                >
+                  ▶️ Tap to Play Track
+                </button>
+              )}
+
+              {/* Idle instructions */}
+              {appState === 'idle' && (
+                <p className="mt-4 text-slate-500 text-sm text-center">
+                  Tap to start a voice conversation with your AI jam partner
+                </p>
+              )}
+            </div>
+
+            {/* Generated Layers - 3 Cards */}
+            {hasLayers && (
+              <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4">
+                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">
+                  🎵 Generated Layers
+                </h2>
+                <div className="grid grid-cols-3 gap-3">
+                  {layers.map(layer => (
+                    <div
+                      key={layer.id}
+                      className={`p-4 rounded-lg text-center transition-all ${
+                        layer.audioUrl
+                          ? 'bg-green-500/20 border border-green-500/50'
+                          : 'bg-slate-700/30 border border-slate-600/50'
+                      }`}
+                    >
+                      <span className="text-2xl mb-1 block">
+                        {layer.type === 'bass' && '🎸'}
+                        {layer.type === 'harmony' && '🎹'}
+                        {layer.type === 'rhythm' && '🥁'}
+                      </span>
+                      <span className={`text-sm font-medium capitalize ${
+                        layer.audioUrl ? 'text-green-400' : 'text-slate-500'
+                      }`}>
+                        {layer.type}
+                      </span>
+                      {layer.audioUrl && (
+                        <span className="block text-xs text-green-500 mt-1">Ready</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Playback Controls */}
+            {isPlaying && (
+              <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2 text-pink-400">
+                    <span className={backingTrackPaused ? '' : 'animate-pulse'}>●</span>
+                    <span className="font-medium">
+                      {backingTrackPaused ? 'Paused' : 'Playing'}
+                      {backingTrackUrl ? ' - Backing Track' : ''}
+                    </span>
+                  </div>
+                  <span className="text-slate-500 text-xs">spacebar to pause/resume</span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={toggleBackingTrack}
+                    className="px-4 py-2 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500
+                               rounded-lg text-white font-medium transition-all flex items-center gap-2"
+                  >
+                    {backingTrackPaused ? '▶️ Resume' : '⏸️ Pause'}
+                  </button>
+                  <button
+                    onClick={stopAll}
+                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg text-white font-medium transition-all flex items-center gap-2"
+                  >
+                    ⏹️ Stop
+                  </button>
+                  {isConnected && (
+                    <button
+                      onClick={toggleDjMute}
+                      className={`px-4 py-2 rounded-lg text-white font-medium transition-all flex items-center gap-2 ${
+                        isDjMuted
+                          ? 'bg-amber-600 hover:bg-amber-500'
+                          : 'bg-slate-700 hover:bg-slate-600'
+                      }`}
+                    >
+                      {isDjMuted ? '🔇 Unmute DJ' : '🔊 Mute DJ'}
+                    </button>
+                  )}
+                  {!isRecordingLayer && (
+                    <button
+                      onClick={startRecording}
+                      className="px-4 py-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500
+                                 rounded-lg text-white font-medium transition-all flex items-center gap-2"
+                    >
+                      🎤 Add Layer
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Recorded Layers */}
+            {recordedLayers.length > 0 && (
+              <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4">
+                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">
+                  🎤 Your Recordings
+                </h2>
+                <div className="space-y-2">
+                  {recordedLayers.map((layer, index) => (
+                    <div
+                      key={layer.id}
+                      className="flex items-center gap-3 bg-slate-700/30 rounded-lg p-3"
+                    >
+                      <span className="text-slate-400 text-sm font-medium">Layer {index + 1}</span>
+                      <div className="flex gap-2 ml-auto">
+                        {layer.isPlaying ? (
+                          <button
+                            onClick={() => pauseRecordedLayer(layer.id)}
+                            className="px-3 py-1.5 bg-yellow-600 hover:bg-yellow-500 rounded text-sm transition-colors"
+                          >
+                            ⏸️
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => playRecordedLayer(layer.id)}
+                            className="px-3 py-1.5 bg-green-600 hover:bg-green-500 rounded text-sm transition-colors"
+                          >
+                            ▶️
+                          </button>
+                        )}
+                        <button
+                          onClick={() => deleteRecordedLayer(layer.id)}
+                          className="px-3 py-1.5 bg-red-600/50 hover:bg-red-500 rounded text-sm transition-colors"
+                        >
+                          🗑️
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </main>
+
+          {/* Sidebar: Session Log */}
+          <aside className="lg:sticky lg:top-8 lg:self-start">
+            <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4">
+              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">
+                📝 Session Log
+              </h2>
+              <div
+                ref={sessionLogRef}
+                className="bg-slate-900/50 rounded-lg p-3 max-h-96 overflow-y-auto border border-slate-700/50"
+              >
+                {sessionLog.length === 0 && !isConnected && (
+                  <p className="text-slate-500 text-sm italic">Start a session to see the conversation...</p>
+                )}
+                {sessionLog.map((entry, index) => (
+                  <div key={index} className="text-sm mb-2">
+                    <span className={entry.role === 'agent' ? 'text-purple-400' : 'text-blue-400'}>
+                      {entry.role === 'agent' ? '🎵 DJ: ' : '🎤 You: '}
+                    </span>
+                    <span className="text-slate-300">{entry.text}</span>
+                  </div>
+                ))}
+                {appState === 'listening' && isConnected && (
+                  <div className="text-sm mb-2">
+                    <span className="text-blue-400">🎤 You: </span>
+                    {liveTranscript ? (
+                      <span className="text-slate-300">{liveTranscript}</span>
+                    ) : (
+                      <span className="text-slate-500 italic animate-pulse">Listening...</span>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Powered by */}
+            <p className="mt-4 text-slate-600 text-xs text-center">
+              Powered by ElevenLabs AI
+            </p>
+          </aside>
         </div>
-      )}
+      </div>
 
-      {/* Hidden audio element for backing track */}
+      {/* Hidden audio element */}
       <audio ref={backingTrackRef} className="hidden" />
-
-      {/* Powered by */}
-      <p className="mt-8 text-slate-600 text-xs">
-        Powered by ElevenLabs AI
-      </p>
     </div>
   );
 }
