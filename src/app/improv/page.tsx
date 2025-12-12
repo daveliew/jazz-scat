@@ -334,7 +334,7 @@ export default function ImprovPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-                Layer Builder
+                Improv
               </h1>
               <Tooltip.Provider delayDuration={200}>
                 <Tooltip.Root>
@@ -381,7 +381,7 @@ export default function ImprovPage() {
               className="flex items-center gap-2 px-4 py-2 bg-teal-600/20 text-teal-300 text-sm font-medium"
             >
               <span>🎚️</span>
-              <span>Layer Builder</span>
+              <span>Improv</span>
             </Link>
           </div>
         </div>
