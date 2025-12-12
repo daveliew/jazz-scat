@@ -590,6 +590,13 @@ export default function Home() {
     }
   }, [isDjMuted, isConnected, conversation]);
 
+  // Auto-scroll session log to bottom when new messages arrive
+  useEffect(() => {
+    if (sessionLogRef.current) {
+      sessionLogRef.current.scrollTop = sessionLogRef.current.scrollHeight;
+    }
+  }, [sessionLog, liveTranscript]);
+
   const startConversation = useCallback(async () => {
     try {
       setAppState('connecting');
@@ -854,9 +861,18 @@ export default function Home() {
           <h3 className="text-sm font-semibold text-slate-400 mb-2">Session Log</h3>
           <div
             ref={sessionLogRef}
-            className="bg-slate-800/50 rounded-lg p-3 max-h-32 overflow-y-auto border border-slate-700 flex flex-col-reverse"
+            className="bg-slate-800/50 rounded-lg p-3 max-h-32 overflow-y-auto border border-slate-700"
           >
-            {/* Live speech-to-text - appears at top due to flex-col-reverse */}
+            {/* Log entries - chronological order (oldest first) */}
+            {sessionLog.map((entry, index) => (
+              <div key={index} className="text-sm mb-1">
+                <span className={entry.role === 'agent' ? 'text-purple-400' : 'text-blue-400'}>
+                  {entry.role === 'agent' ? '🎵 DJ: ' : '🎤 You: '}
+                </span>
+                <span className="text-slate-300">{entry.text}</span>
+              </div>
+            ))}
+            {/* Live speech-to-text - at bottom, auto-scrolls into view */}
             {appState === 'listening' && isConnected && (
               <div className="text-sm mb-1">
                 <span className="text-blue-400">🎤 You: </span>
@@ -867,15 +883,6 @@ export default function Home() {
                 )}
               </div>
             )}
-            {/* Log entries - newest appears at top due to flex-col-reverse */}
-            {sessionLog.map((entry, index) => (
-              <div key={index} className="text-sm mb-1">
-                <span className={entry.role === 'agent' ? 'text-purple-400' : 'text-blue-400'}>
-                  {entry.role === 'agent' ? '🎵 DJ: ' : '🎤 You: '}
-                </span>
-                <span className="text-slate-300">{entry.text}</span>
-              </div>
-            ))}
           </div>
         </div>
       )}
