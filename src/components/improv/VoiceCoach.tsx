@@ -3,7 +3,13 @@
 import { useConversation } from '@elevenlabs/react';
 import { useState, useCallback } from 'react';
 
-export function VoiceCoach() {
+interface VoiceCoachProps {
+  genre: string;
+  bpm: number;
+  activeLayers: string[];
+}
+
+export function VoiceCoach({ genre, bpm, activeLayers }: VoiceCoachProps) {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,16 +35,22 @@ export function VoiceCoach() {
     setError(null);
 
     try {
-      // Get signed URL from our API
-      const response = await fetch('/api/conversation-token');
+      // Get signed URL from our API (use coach agent)
+      const response = await fetch('/api/conversation-token?agent=coach');
       const data = await response.json();
 
       if (!response.ok || !data.signedUrl) {
         throw new Error(data.error || 'Failed to get conversation token');
       }
 
+      // Pass context as dynamic variables
       await conversation.startSession({
         signedUrl: data.signedUrl,
+        dynamicVariables: {
+          genre,
+          bpm: bpm.toString(),
+          active_layers: activeLayers.join(', ') || 'none',
+        },
       });
     } catch (err) {
       console.error('Failed to start coaching:', err);
@@ -46,7 +58,7 @@ export function VoiceCoach() {
     } finally {
       setIsConnecting(false);
     }
-  }, [conversation]);
+  }, [conversation, genre, bpm, activeLayers]);
 
   const stopCoaching = useCallback(async () => {
     try {

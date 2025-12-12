@@ -13,6 +13,7 @@
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.27.0",
     "@elevenlabs/react": "^0.12.1",
+    "@radix-ui/react-tooltip": "^1.2.8",
     "dotenv": "^17.2.3",
     "next": "16.0.8",
     "react": "19.2.1",
