@@ -1,11 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const agentId = process.env.ELEVENLABS_AGENT_ID;
+    const { searchParams } = new URL(request.url);
+    const agentType = searchParams.get("agent") || "dj";
+
+    // Select agent ID based on type
+    const agentId = agentType === "coach"
+      ? process.env.ELEVENLABS_AGENT_ID_COACH
+      : process.env.ELEVENLABS_AGENT_ID;
     const apiKey = process.env.ELEVENLABS_API_KEY;
 
     console.log("🔑 ENV CHECK:", {
+      agentType,
       hasAgentId: !!agentId,
       hasApiKey: !!apiKey,
       agentIdPrefix: agentId?.substring(0, 10),

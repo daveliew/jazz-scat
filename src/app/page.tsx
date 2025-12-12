@@ -435,6 +435,75 @@ export default function Home() {
     }
   }, [isConnected]);
 
+  // Make music using Music Compose API (called by clientTools)
+  const makeMusic = useCallback(async (prompt: string): Promise<string> => {
+    console.log('🎵 [1] Starting makeMusic with prompt:', prompt);
+    setAppState('generating');
+    setStatusText('Composing music...');
+
+    try {
+      console.log('🎵 [2] Calling /api/make-music...');
+      const response = await fetch('/api/make-music', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt,
+          duration_ms: 15000, // 15 seconds
+        }),
+      });
+
+      console.log('🎵 [3] Response status:', response.status);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('🎵 [3b] Error response:', errorData);
+        throw new Error(errorData.error || `Music generation failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('🎵 [4] Got response, success:', data.success);
+
+      if (!data.success || !data.audioUrl) {
+        throw new Error('No audio URL in response');
+      }
+
+      setBackingTrackUrl(data.audioUrl);
+
+      // Play looping audio
+      console.log('🎵 [5] backingTrackRef.current exists?', !!backingTrackRef.current);
+      if (backingTrackRef.current) {
+        backingTrackRef.current.src = data.audioUrl;
+        backingTrackRef.current.loop = true;
+        console.log('🎵 [6] Attempting to play...');
+
+        try {
+          await backingTrackRef.current.play();
+          console.log('🎵 [7] Play started successfully!');
+          setNeedsManualPlay(false);
+          setAppState('playing');
+          setStatusText('Music playing!');
+          setIsPlaying(true);
+        } catch (playError) {
+          // iOS may block autoplay - show manual play button
+          console.warn('🎵 [7b] Autoplay blocked (likely iOS), enabling manual play:', playError);
+          setNeedsManualPlay(true);
+          setAppState('playing');
+          setStatusText('Tap to play music');
+          setIsPlaying(false);
+          return 'Music ready! Tap the play button to start.';
+        }
+      }
+
+      console.log('🎵 [8] Done! Returning success');
+      return 'Music composed and playing!';
+    } catch (err) {
+      console.error('🎵 [ERROR] Make music error:', err);
+      setStatusText('Music generation failed');
+      setAppState(isConnected ? 'listening' : 'idle');
+      return 'Failed to generate music';
+    }
+  }, [isConnected]);
+
   // Parse agent messages for action triggers
   const parseAndTriggerAction = useCallback((text: string) => {
     const lowerText = text.toLowerCase();
@@ -501,7 +570,17 @@ export default function Home() {
           return result;
         } catch (err) {
           console.error('Tool error:', err);
-          return 'Sorry, music generation encountered an error. Please try again.';
+          return 'Sorry, sound generation encountered an error. Please try again.';
+        }
+      },
+      make_music: async ({ prompt }: { prompt: string }) => {
+        console.log('Agent called make_music with:', prompt);
+        try {
+          const result = await makeMusic(prompt);
+          return result;
+        } catch (err) {
+          console.error('Tool error:', err);
+          return 'Sorry, music composition encountered an error. Please try again.';
         }
       },
     },
@@ -538,11 +617,30 @@ export default function Home() {
       console.log('📨 Message event:', message);
       // Handle user transcript - show what user said and switch to processing
       if ('source' in message && message.source === 'user' && message.message) {
-        setSessionLog(prev => [...prev, {
-          role: 'user',
-          text: message.message,
-          timestamp: new Date(),
-        }]);
+        // Deduplicate: Skip if last message was user with similar/subset text
+        setSessionLog(prev => {
+          const lastEntry = prev[prev.length - 1];
+          const newText = message.message.trim();
+
+          // Skip if last entry was also from user and text overlaps significantly
+          if (lastEntry?.role === 'user') {
+            const lastText = lastEntry.text.trim();
+            // Skip if new text is a subset of last text (fragmented speech)
+            if (lastText.includes(newText) || newText.includes(lastText)) {
+              // Update last entry if new text is longer (more complete)
+              if (newText.length > lastText.length) {
+                return [...prev.slice(0, -1), { ...lastEntry, text: newText }];
+              }
+              return prev; // Skip duplicate/subset
+            }
+          }
+
+          return [...prev, {
+            role: 'user',
+            text: newText,
+            timestamp: new Date(),
+          }];
+        });
         // User finished speaking, agent is processing
         setAppState('processing');
         setStatusText('Thinking...');
