@@ -2,7 +2,7 @@
 
 > Your AI jam partner - practice vocals anytime, with anyone... even when you're alone.
 
-**ElevenLabs AI Agents Hackathon 2025**
+🥈 **2nd Place** - [ElevenLabs Worldwide Hackathon](https://singapore.aitinkerers.org/p/elevenlabs-global-hackathon-singapore) | Singapore | Dec 11, 2025
 
 ## The Problem
 
@@ -83,9 +83,10 @@ src/
 │       ├── generate-layer/         # Individual layer generation
 │       └── analyze-improv/         # Vocal analysis feedback
 ├── components/improv/
-│   ├── GenreSelector.tsx           # Genre + BPM controls
+│   ├── GenreSelector.tsx           # Genre + BPM + Metronome
 │   ├── LayerMixer.tsx              # Track layer controls
 │   ├── TrackLayer.tsx              # Individual layer UI
+│   ├── Metronome.tsx               # Visual + audio beat indicator
 │   ├── VoiceCoach.tsx              # AI voice coaching
 │   └── CoachFeedback.tsx           # Feedback display
 ├── lib/
@@ -148,10 +149,25 @@ Layering in music means recording multiple audio tracks that play simultaneously
 3. Add layer after layer - melody, harmony, beatbox
 4. All layers play simultaneously for a full arrangement
 
+## Post-Hackathon Improvements
+
+Built after the demo to enhance the experience:
+
+| Feature | Description |
+|---------|-------------|
+| Two-Column Layout | Music controls (left) + Coaching sidebar (right, sticky) |
+| Metronome | Visual + audio beat indicator synced to BPM |
+| Help Tooltip | Radix UI tooltip with quick-start instructions |
+| Live Transcription | Real-time speech-to-text in session log |
+| Multi-Agent Support | Separate Voice DJ and Voice Coach agents |
+| Session Logging | Auto-scroll with live indicator |
+| iOS Compatibility | Audio unlock fixes for mobile Safari |
+
 ## Tech Stack
 
-- **Framework**: Next.js 16 + React 19
-- **Styling**: Tailwind CSS 4
+- **Framework**: Next.js 15 + React 18
+- **Styling**: Tailwind CSS
+- **UI Components**: Radix UI
 - **Voice AI**: ElevenLabs Conversational AI
 - **Audio**: ElevenLabs Sound Generation + Web Audio API
 - **Language**: TypeScript
@@ -176,7 +192,9 @@ npm run test:agent # Test ElevenLabs agent connection
 
 ## Team
 
-Built for ElevenLabs AI Agents Hackathon 2025
+Built at [ElevenLabs Worldwide Hackathon](https://singapore.aitinkerers.org/p/elevenlabs-global-hackathon-singapore) - Singapore edition.
+
+🎉 **2nd Place** thanks to great teamwork and good vibes!
 
 ## License
 
