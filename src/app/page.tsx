@@ -77,6 +77,9 @@ export default function Home() {
   // DJ mute state
   const [isDjMuted, setIsDjMuted] = useState(false);
 
+  // Looper mode state - when true, DJ knows to ignore singing/humming
+  const [isLooperMode, setIsLooperMode] = useState(false);
+
   // iOS audio unlock state
   const [isAudioUnlocked, setIsAudioUnlocked] = useState(false);
   const [needsManualPlay, setNeedsManualPlay] = useState(false);
@@ -258,10 +261,10 @@ export default function Home() {
       setAppState('recording');
     }
     setIsRecordingLayer(true);
+    setIsLooperMode(true); // Enter looper mode so DJ knows to ignore singing
     setStatusText('Recording your layer...');
 
-    // Auto-mute DJ during recording to prevent voice triggering responses
-    setIsDjMuted(true);
+    // Note: We no longer mute DJ - instead DJ is instructed to ignore singing in looper mode
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -295,6 +298,7 @@ export default function Home() {
         setRecordedLayers(prev => [...prev, newLayer]);
         stream.getTracks().forEach(track => track.stop());
         setIsRecordingLayer(false);
+        setIsLooperMode(false); // Exit looper mode
         setStatusText('Layer saved!');
       };
 
@@ -304,12 +308,14 @@ export default function Home() {
       setTimeout(() => {
         if (mediaRecorderRef.current?.state === 'recording') {
           mediaRecorderRef.current.stop();
+          setIsLooperMode(false);
         }
       }, 30000);
     } catch (err) {
       console.error('Recording error:', err);
       setStatusText('Mic access denied');
       setIsRecordingLayer(false);
+      setIsLooperMode(false);
       if (!isPlaying) {
         setAppState(isConnected ? 'listening' : 'idle');
       }
@@ -320,9 +326,7 @@ export default function Home() {
     if (mediaRecorderRef.current?.state === 'recording') {
       mediaRecorderRef.current.stop();
       setIsRecordingLayer(false);
-
-      // Auto-unmute DJ after recording
-      setIsDjMuted(false);
+      setIsLooperMode(false); // Exit looper mode
 
       // If backing track is playing, stay in playing state (layering mode)
       if (isPlaying) {
@@ -590,6 +594,71 @@ export default function Home() {
           return 'Sorry, music composition encountered an error. Please try again.';
         }
       },
+      // Looper mode tools - DJ calls these when user wants to record layers
+      enter_looper_mode: async () => {
+        console.log('🔄 Agent called enter_looper_mode');
+        setIsLooperMode(true);
+        // Auto-start recording
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          const mediaRecorder = new MediaRecorder(stream);
+          mediaRecorderRef.current = mediaRecorder;
+          audioChunksRef.current = [];
+
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunksRef.current.push(event.data);
+            }
+          };
+
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+
+            const newLayer: RecordedLayer = {
+              id: `layer-${Date.now()}`,
+              audioUrl,
+              audioElement: null,
+              isPlaying: false,
+            };
+
+            const audioElement = new Audio(audioUrl);
+            audioElement.loop = true;
+            newLayer.audioElement = audioElement;
+
+            setRecordedLayers(prev => [...prev, newLayer]);
+            stream.getTracks().forEach(track => track.stop());
+            setIsRecordingLayer(false);
+          };
+
+          mediaRecorder.start();
+          setIsRecordingLayer(true);
+
+          // Auto-stop after 30 seconds
+          setTimeout(() => {
+            if (mediaRecorderRef.current?.state === 'recording') {
+              mediaRecorderRef.current.stop();
+              setIsLooperMode(false);
+            }
+          }, 30000);
+
+          return 'Looper mode activated! Recording your layer. Say "done" when finished.';
+        } catch (err) {
+          console.error('Recording error in looper mode:', err);
+          setIsLooperMode(false);
+          return 'Could not access microphone for recording.';
+        }
+      },
+      exit_looper_mode: async () => {
+        console.log('🔄 Agent called exit_looper_mode');
+        if (mediaRecorderRef.current?.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
+        setIsLooperMode(false);
+        setIsRecordingLayer(false);
+        const layerCount = recordedLayers.length + 1; // +1 for the one being saved
+        return `Layer saved! You now have ${layerCount} recorded layer${layerCount > 1 ? 's' : ''}. Want to add another?`;
+      },
     },
     onConnect: async () => {
       setIsConnected(true);
@@ -787,8 +856,30 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Recording Mode Banner */}
-        {isRecordingLayer && (
+        {/* Looper Mode Banner - DJ is listening but ignoring musical sounds */}
+        {isLooperMode && isRecordingLayer && (
+          <div className="mb-6 p-3 bg-emerald-900/30 border border-emerald-500/50 rounded-lg flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-emerald-400 animate-pulse text-xl">🔄</span>
+              <span className="text-emerald-300 font-medium">Looper Mode - Recording Layer (say &quot;done&quot; when finished)</span>
+            </div>
+            <button
+              onClick={() => {
+                if (mediaRecorderRef.current?.state === 'recording') {
+                  mediaRecorderRef.current.stop();
+                }
+                setIsLooperMode(false);
+                setIsRecordingLayer(false);
+              }}
+              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        )}
+
+        {/* Legacy Recording Mode Banner (non-looper, manual recording) */}
+        {isRecordingLayer && !isLooperMode && (
           <div className="mb-6 p-3 bg-red-900/30 border border-red-500/50 rounded-lg flex items-center justify-between">
             <div className="flex items-center gap-3">
               <span className="text-red-400 animate-pulse text-xl">🔴</span>
@@ -955,10 +1046,10 @@ export default function Home() {
                       {isDjMuted ? '🔇 Unmute DJ' : '🔊 Mute DJ'}
                     </button>
                   )}
-                  {!isRecordingLayer && (
+                  {isConnected && !isRecordingLayer && (
                     <button
                       onClick={startRecording}
-                      className="px-4 py-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500
+                      className="px-4 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500
                                  rounded-lg text-white font-medium transition-all flex items-center gap-2"
                     >
                       🎤 Add Layer
