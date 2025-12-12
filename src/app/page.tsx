@@ -1,6 +1,6 @@
 'use client';
 
-import { useConversation } from '@elevenlabs/react';
+import { useConversation, useScribe } from '@elevenlabs/react';
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { getAudioMixer, AudioMixer } from '@/lib/audio-mixer';
 import Link from 'next/link';
@@ -66,6 +66,9 @@ export default function Home() {
 
   // Session log state
   const [sessionLog, setSessionLog] = useState<LogEntry[]>([]);
+
+  // Live transcription state (from Scribe)
+  const [liveTranscript, setLiveTranscript] = useState('');
 
   // Backing track state (from Sound Generation API)
   const [backingTrackUrl, setBackingTrackUrl] = useState<string | null>(null);
@@ -470,6 +473,21 @@ export default function Home() {
     }
   }, [generateLayer, playAll, stopAll, startRecording, stopRecording]);
 
+  // Scribe for live speech-to-text
+  const scribe = useScribe({
+    modelId: 'scribe_v2_realtime',
+    onPartialTranscript: (data) => {
+      setLiveTranscript(data.text);
+    },
+    onCommittedTranscript: () => {
+      // Clear live transcript when committed (conversation handles the final transcript)
+      setLiveTranscript('');
+    },
+    onError: (error) => {
+      console.error('Scribe error:', error);
+    },
+  });
+
   // ElevenLabs conversation with clientTools
   // NOTE: ElevenLabs Agent system prompt should be:
   // "You are a jazz DJ. Ask the user for a vibe. When they answer,
@@ -487,17 +505,34 @@ export default function Home() {
         }
       },
     },
-    onConnect: () => {
+    onConnect: async () => {
       setIsConnected(true);
       setAppState('listening');
       setStatusText('Listening...');
       setError(null);
       setSessionLog([]); // Clear session log on new connection
+      setLiveTranscript(''); // Clear live transcript
+
+      // Connect Scribe for live speech-to-text
+      try {
+        const scribeResponse = await fetch('/api/scribe-token');
+        if (scribeResponse.ok) {
+          const { token } = await scribeResponse.json();
+          await scribe.connect({ token, microphone: {} });
+          console.log('Scribe connected for live transcription');
+        }
+      } catch (err) {
+        console.warn('Could not connect Scribe:', err);
+      }
     },
     onDisconnect: () => {
       setIsConnected(false);
       setAppState('idle');
       setStatusText('');
+      setLiveTranscript('');
+
+      // Disconnect Scribe
+      scribe.disconnect();
     },
     onMessage: (message) => {
       console.log('📨 Message event:', message);
@@ -821,11 +856,15 @@ export default function Home() {
             ref={sessionLogRef}
             className="bg-slate-800/50 rounded-lg p-3 max-h-32 overflow-y-auto border border-slate-700 flex flex-col-reverse"
           >
-            {/* Live listening indicator - appears at top due to flex-col-reverse */}
+            {/* Live speech-to-text - appears at top due to flex-col-reverse */}
             {appState === 'listening' && isConnected && (
-              <div className="text-sm mb-1 animate-pulse">
+              <div className="text-sm mb-1">
                 <span className="text-blue-400">🎤 You: </span>
-                <span className="text-slate-500 italic">Listening...</span>
+                {liveTranscript ? (
+                  <span className="text-slate-300">{liveTranscript}</span>
+                ) : (
+                  <span className="text-slate-500 italic animate-pulse">Listening...</span>
+                )}
               </div>
             )}
             {/* Log entries - newest appears at top due to flex-col-reverse */}
