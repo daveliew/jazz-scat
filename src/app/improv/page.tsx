@@ -328,8 +328,8 @@ export default function ImprovPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Header with Mode Tabs */}
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {/* Header with Mode Tabs - Full Width */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-2">
@@ -386,62 +386,74 @@ export default function ImprovPage() {
           </div>
         </div>
 
-        {/* Genre Selector */}
-        <div className="mb-6">
-          <GenreSelector
-            selectedGenre={genre}
-            bpm={bpm}
-            onGenreChange={setGenre}
-            onBpmChange={setBpm}
-            disabled={isRecording || isPlayingAll}
-          />
+        {/* Two-Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
+          {/* Main Column: Music Controls */}
+          <main className="space-y-6">
+            {/* Genre Selector */}
+            <GenreSelector
+              selectedGenre={genre}
+              bpm={bpm}
+              onGenreChange={setGenre}
+              onBpmChange={setBpm}
+              disabled={isRecording || isPlayingAll}
+            />
+
+            {/* New Session Button */}
+            <div className="flex justify-end">
+              <button
+                onClick={handleNewSession}
+                className="px-4 py-2 text-sm text-slate-400 hover:text-white
+                           border border-slate-700 hover:border-slate-600
+                           rounded-lg transition-colors"
+              >
+                🔄 New Session
+              </button>
+            </div>
+
+            {/* Layer Mixer */}
+            <LayerMixer
+              layers={layers}
+              onGenerateLayer={handleGenerateLayer}
+              onRecordLayer={handleRecordLayer}
+              onVolumeChange={handleVolumeChange}
+              onMuteToggle={handleMuteToggle}
+              onPlayAll={handlePlayAll}
+              onStopAll={handleStopAll}
+              isPlayingAll={isPlayingAll}
+              isRecording={isRecording}
+            />
+          </main>
+
+          {/* Sidebar: Coaching Panel */}
+          <aside className="space-y-6 lg:sticky lg:top-8 lg:self-start">
+            {/* Voice Coach - Real-time Conversation */}
+            <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4">
+              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">
+                🎤 Voice Coach
+              </h2>
+              <VoiceCoach
+                genre={genre}
+                bpm={bpm}
+                activeLayers={layers.filter(l => l.audioUrl && l.type !== 'user').map(l => l.type)}
+              />
+            </div>
+
+            {/* AI Coach - Analyze Recording */}
+            <div className="bg-slate-800/30 rounded-xl border border-slate-700/50 p-4">
+              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">
+                📝 AI Feedback
+              </h2>
+              <CoachFeedback
+                feedback={coachFeedback}
+                tips={coachTips}
+                isAnalyzing={isAnalyzing}
+                onAnalyze={handleAnalyze}
+                hasUserRecording={hasUserRecording}
+              />
+            </div>
+          </aside>
         </div>
-
-        {/* Voice Coach */}
-        <div className="mb-6">
-          <VoiceCoach
-            genre={genre}
-            bpm={bpm}
-            activeLayers={layers.filter(l => l.audioUrl && l.type !== 'user').map(l => l.type)}
-          />
-        </div>
-
-        {/* New Session Button */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={handleNewSession}
-            className="px-4 py-2 text-sm text-slate-400 hover:text-white
-                       border border-slate-700 hover:border-slate-600
-                       rounded-lg transition-colors"
-          >
-            🔄 New Session
-          </button>
-        </div>
-
-        {/* Layer Mixer */}
-        <div className="mb-8">
-          <LayerMixer
-            layers={layers}
-            onGenerateLayer={handleGenerateLayer}
-            onRecordLayer={handleRecordLayer}
-            onVolumeChange={handleVolumeChange}
-            onMuteToggle={handleMuteToggle}
-            onPlayAll={handlePlayAll}
-            onStopAll={handleStopAll}
-            isPlayingAll={isPlayingAll}
-            isRecording={isRecording}
-          />
-        </div>
-
-        {/* AI Coach - Analyze Recording */}
-        <CoachFeedback
-          feedback={coachFeedback}
-          tips={coachTips}
-          isAnalyzing={isAnalyzing}
-          onAnalyze={handleAnalyze}
-          hasUserRecording={hasUserRecording}
-        />
-
       </div>
     </div>
   );
