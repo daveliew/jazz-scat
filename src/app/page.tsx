@@ -557,7 +557,26 @@ export default function Home() {
   const scribe = useScribe({
     modelId: 'scribe_v2_realtime',
     onPartialTranscript: (data) => {
-      setLiveTranscript(data.text);
+      const text = data.text?.trim() || '';
+
+      // Filter out likely hallucinations during silence:
+      // 1. Skip empty/very short text (< 2 chars)
+      if (text.length < 2) {
+        setLiveTranscript('');
+        return;
+      }
+
+      // 2. Skip text that's mostly non-Latin characters (hallucinated scripts like Urdu)
+      // Allow a-z, A-Z, 0-9, common punctuation, and spaces
+      const latinChars = (text.match(/[a-zA-Z0-9\s.,!?'"()-]/g) || []).length;
+      const latinRatio = latinChars / text.length;
+      if (latinRatio < 0.5) {
+        // More than 50% non-Latin characters = likely hallucination
+        setLiveTranscript('');
+        return;
+      }
+
+      setLiveTranscript(text);
     },
     onCommittedTranscript: () => {
       // Clear live transcript when committed (conversation handles the final transcript)
