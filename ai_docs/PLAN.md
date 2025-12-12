@@ -120,7 +120,7 @@ User can request changes or new tracks
 
 > "Ever wanted to jam but had no band to practice with?"
 
-1. Open Music Genie - see the landing page
+1. Open Jazz Scat - see the landing page
 2. Click "Start Jamming" - DJ greets you
 3. Say: *"Give me something smooth and jazzy"*
 4. Watch the DJ respond and generate a track

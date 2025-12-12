@@ -166,14 +166,36 @@ export default function Home() {
   }, []);
 
   const stopAll = useCallback(() => {
+    // Stop mixer tracks
     mixerRef.current?.stopAllTracks();
+
+    // Stop backing track
+    if (backingTrackRef.current) {
+      backingTrackRef.current.pause();
+      backingTrackRef.current.currentTime = 0;
+    }
+
+    // Stop all recorded layers
+    recordedLayers.forEach(layer => {
+      if (layer.audioElement) {
+        layer.audioElement.pause();
+        layer.audioElement.currentTime = 0;
+      }
+    });
+
+    // Reset state
     setIsPlaying(false);
+    setBackingTrackPaused(false);
+    setBackingTrackUrl(null);
     setStatusText('Stopped');
+
     if (isConnected) {
       setAppState('listening');
       setTimeout(() => setStatusText('Listening...'), 1000);
+    } else {
+      setAppState('idle');
     }
-  }, [isConnected]);
+  }, [isConnected, recordedLayers]);
 
   const startRecording = useCallback(async () => {
     // Only change appState if not already playing (allows layering while track plays)
@@ -620,6 +642,14 @@ export default function Home() {
               ) : (
                 <>⏸️ Pause</>
               )}
+            </button>
+            <button
+              onClick={stopAll}
+              className="px-6 py-2 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-500 hover:to-slate-600
+                         rounded-full text-white font-semibold transition-all transform hover:scale-105 active:scale-95
+                         flex items-center gap-2"
+            >
+              ⏹️ Stop
             </button>
             {!isRecordingLayer && (
               <button
