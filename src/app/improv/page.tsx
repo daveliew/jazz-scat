@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { GenreSelector } from '@/components/improv/GenreSelector';
 import { LayerMixer } from '@/components/improv/LayerMixer';
 import { CoachFeedback } from '@/components/improv/CoachFeedback';
@@ -326,14 +327,37 @@ export default function ImprovPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
-      <div className="max-w-3xl mx-auto px-4 py-8">
+      {/* Navigation */}
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+            Jazz Scat
+          </Link>
+          <div className="flex gap-4">
+            <Link
+              href="/"
+              className="px-4 py-2 rounded-full text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors"
+            >
+              Voice DJ
+            </Link>
+            <Link
+              href="/improv"
+              className="px-4 py-2 rounded-full text-sm font-medium bg-teal-600/20 text-teal-300 border border-teal-500/50"
+            >
+              Layer Builder
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <div className="max-w-3xl mx-auto px-4 py-8 pt-20">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Acapella Improv Trainer
+          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+            Layer Builder
           </h1>
           <p className="text-slate-400">
-            Generate backing vocals, record your improv, get AI feedback
+            Build backing tracks layer by layer, record your improv, get AI feedback
           </p>
         </div>
 
