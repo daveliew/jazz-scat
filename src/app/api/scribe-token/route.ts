@@ -14,9 +14,9 @@ export async function GET() {
 
     // Get Scribe token for real-time speech-to-text
     const response = await fetch(
-      "https://api.elevenlabs.io/v1/scribe/get-token",
+      "https://api.elevenlabs.io/v1/single-use-token/realtime_scribe",
       {
-        method: "GET",
+        method: "POST",
         headers: {
           "xi-api-key": apiKey,
         },
