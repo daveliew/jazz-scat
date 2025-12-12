@@ -693,21 +693,31 @@ export default function Home() {
       console.log('📨 Message event:', message);
       // Handle user transcript - show what user said and switch to processing
       if ('source' in message && message.source === 'user' && message.message) {
-        // Deduplicate: Skip if last message was user with similar/subset text
+        // Deduplicate: Check against ALL recent user messages (not just the last one)
+        // This fixes the bug where tool calls cause message re-emission
         setSessionLog(prev => {
-          const lastEntry = prev[prev.length - 1];
           const newText = message.message.trim();
 
-          // Skip if last entry was also from user and text overlaps significantly
-          if (lastEntry?.role === 'user') {
-            const lastText = lastEntry.text.trim();
-            // Skip if new text is a subset of last text (fragmented speech)
-            if (lastText.includes(newText) || newText.includes(lastText)) {
-              // Update last entry if new text is longer (more complete)
-              if (newText.length > lastText.length) {
-                return [...prev.slice(0, -1), { ...lastEntry, text: newText }];
+          // Get recent user messages to check for duplicates
+          const recentUserMessages = prev
+            .filter(e => e.role === 'user')
+            .slice(-5); // Check last 5 user messages
+
+          // Check for exact or near-duplicate
+          for (const entry of recentUserMessages) {
+            const entryText = entry.text.trim();
+            // Skip if exact match or text overlaps significantly
+            if (entryText === newText || entryText.includes(newText) || newText.includes(entryText)) {
+              // If new text is longer, update the existing entry
+              if (newText.length > entryText.length) {
+                const entryIndex = prev.findIndex(e => e === entry);
+                if (entryIndex !== -1) {
+                  const updated = [...prev];
+                  updated[entryIndex] = { ...entry, text: newText };
+                  return updated;
+                }
               }
-              return prev; // Skip duplicate/subset
+              return prev; // Skip duplicate
             }
           }
 
