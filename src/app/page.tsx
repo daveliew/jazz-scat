@@ -800,13 +800,21 @@ export default function Home() {
       </div>
 
       {/* Session Log */}
-      {sessionLog.length > 0 && (
+      {(sessionLog.length > 0 || (isConnected && appState === 'listening')) && (
         <div className="mt-8 w-full max-w-md">
           <h3 className="text-sm font-semibold text-slate-400 mb-2">Session Log</h3>
           <div
             ref={sessionLogRef}
-            className="bg-slate-800/50 rounded-lg p-3 max-h-32 overflow-y-auto border border-slate-700"
+            className="bg-slate-800/50 rounded-lg p-3 max-h-32 overflow-y-auto border border-slate-700 flex flex-col-reverse"
           >
+            {/* Live listening indicator - appears at top due to flex-col-reverse */}
+            {appState === 'listening' && isConnected && (
+              <div className="text-sm mb-1 animate-pulse">
+                <span className="text-blue-400">🎤 You: </span>
+                <span className="text-slate-500 italic">Listening...</span>
+              </div>
+            )}
+            {/* Log entries - newest appears at top due to flex-col-reverse */}
             {sessionLog.map((entry, index) => (
               <div key={index} className="text-sm mb-1">
                 <span className={entry.role === 'agent' ? 'text-purple-400' : 'text-blue-400'}>
