@@ -328,14 +328,32 @@ export default function ImprovPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
       <div className="max-w-3xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
-            Layer Builder
-          </h1>
-          <p className="text-slate-400">
-            Build backing tracks layer by layer, record your improv, get AI feedback
-          </p>
+        {/* Header with Mode Tabs */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
+              Layer Builder
+            </h1>
+            <p className="text-slate-400 text-sm mt-1">
+              Build backing tracks layer by layer
+            </p>
+          </div>
+          <div className="flex rounded-xl overflow-hidden border border-slate-700/50 bg-slate-800/30 self-start sm:self-auto">
+            <Link
+              href="/"
+              className="flex items-center gap-2 px-4 py-2 text-slate-400 hover:text-white hover:bg-slate-700/30 transition-colors text-sm font-medium border-r border-slate-700/50"
+            >
+              <span>🎤</span>
+              <span>Voice DJ</span>
+            </Link>
+            <Link
+              href="/improv"
+              className="flex items-center gap-2 px-4 py-2 bg-teal-600/20 text-teal-300 text-sm font-medium"
+            >
+              <span>🎚️</span>
+              <span>Layer Builder</span>
+            </Link>
+          </div>
         </div>
 
         {/* Genre Selector */}
@@ -400,26 +418,6 @@ export default function ImprovPage() {
             <li>Record your vocal improv (30 seconds max)</li>
             <li>Get feedback from the AI Coach</li>
           </ol>
-        </div>
-
-        {/* Footer Mode Tabs */}
-        <div className="mt-8 flex justify-center">
-          <div className="flex rounded-xl overflow-hidden border border-slate-700/50 bg-slate-800/30">
-            <Link
-              href="/"
-              className="flex items-center gap-2 px-6 py-3 text-slate-400 hover:text-white hover:bg-slate-700/30 transition-colors font-medium border-r border-slate-700/50"
-            >
-              <span>🎤</span>
-              <span>Voice DJ</span>
-            </Link>
-            <Link
-              href="/improv"
-              className="flex items-center gap-2 px-6 py-3 bg-teal-600/20 text-teal-300 font-medium"
-            >
-              <span>🎚️</span>
-              <span>Layer Builder</span>
-            </Link>
-          </div>
         </div>
       </div>
     </div>
