@@ -387,15 +387,26 @@ export default function Home() {
         backingTrackRef.current.src = audioUrl;
         backingTrackRef.current.loop = true;
         console.log('🎸 [7] Attempting to play...');
-        await backingTrackRef.current.play();
-        console.log('🎸 [8] Play started successfully!');
+
+        try {
+          await backingTrackRef.current.play();
+          console.log('🎸 [8] Play started successfully!');
+          setNeedsManualPlay(false);
+          setAppState('playing');
+          setStatusText('Track playing!');
+          setIsPlaying(true);
+        } catch (playError) {
+          // iOS may block autoplay - show manual play button
+          console.warn('🎸 [8b] Autoplay blocked (likely iOS), enabling manual play:', playError);
+          setNeedsManualPlay(true);
+          setAppState('playing');
+          setStatusText('Tap to play track');
+          setIsPlaying(false); // Not actually playing yet
+          return 'Track ready! Tap the play button to start.';
+        }
       } else {
         console.error('🎸 [6b] backingTrackRef is null!');
       }
-
-      setAppState('playing');
-      setStatusText('Track playing!');
-      setIsPlaying(true);
 
       console.log('🎸 [9] Done! Returning success');
       return 'Track generated and playing!';
@@ -536,6 +547,9 @@ export default function Home() {
       setStatusText('Connecting...');
       setError(null);
 
+      // Unlock audio for iOS BEFORE anything else (must be in user gesture context)
+      await unlockAudioForIOS();
+
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
       const response = await fetch('/api/conversation-token');
@@ -549,7 +563,7 @@ export default function Home() {
       setAppState('idle');
       setStatusText('');
     }
-  }, [conversation]);
+  }, [conversation, unlockAudioForIOS]);
 
   const endConversation = useCallback(async () => {
     stopAll();
@@ -583,31 +597,8 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 flex flex-col items-center justify-center p-4">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Jazz Scat
-          </Link>
-          <div className="flex gap-4">
-            <Link
-              href="/"
-              className="px-4 py-2 rounded-full text-sm font-medium bg-purple-600/20 text-purple-300 border border-purple-500/50"
-            >
-              Voice DJ
-            </Link>
-            <Link
-              href="/improv"
-              className="px-4 py-2 rounded-full text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors"
-            >
-              Layer Builder
-            </Link>
-          </div>
-        </div>
-      </nav>
-
       {/* Header */}
-      <div className="text-center mb-8 mt-16">
+      <div className="text-center mb-8">
         <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent">
           Jazz Scat
         </h1>
@@ -671,6 +662,32 @@ export default function Home() {
       {/* Error */}
       {error && (
         <p className="mt-4 text-red-400 text-sm">{error}</p>
+      )}
+
+      {/* iOS Manual Play Button - shown when autoplay is blocked */}
+      {needsManualPlay && backingTrackUrl && (
+        <button
+          onClick={async () => {
+            if (backingTrackRef.current) {
+              try {
+                await backingTrackRef.current.play();
+                setNeedsManualPlay(false);
+                setIsPlaying(true);
+                setStatusText('Track playing!');
+              } catch (e) {
+                console.error('Manual play failed:', e);
+                setStatusText('Playback failed. Try again.');
+              }
+            }
+          }}
+          className="mt-6 px-8 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500
+                     rounded-2xl text-white text-xl font-bold shadow-lg shadow-green-500/25
+                     transform hover:scale-105 transition-all active:scale-95
+                     flex items-center gap-3 animate-pulse"
+        >
+          <span>▶️</span>
+          <span>Tap to Play Track</span>
+        </button>
       )}
 
       {/* Layer indicators */}
@@ -759,22 +776,28 @@ export default function Home() {
 
       {/* Instructions - only when idle */}
       {appState === 'idle' && (
-        <div className="mt-12 text-center max-w-md">
+        <div className="mt-8 text-center">
           <p className="text-slate-500 text-sm">Tap the button to start a voice conversation with your AI jam partner</p>
-
-          {/* Secondary CTA */}
-          <div className="mt-6 p-4 bg-slate-800/50 rounded-xl border border-slate-700/50">
-            <p className="text-slate-400 text-sm mb-3">Or build your backing track layer by layer:</p>
-            <Link
-              href="/improv"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 rounded-full text-white font-semibold transition-all transform hover:scale-105 active:scale-95"
-            >
-              <span>Layer Builder</span>
-              <span>🎚️</span>
-            </Link>
-          </div>
         </div>
       )}
+
+      {/* Footer Mode Tabs */}
+      <div className="mt-8 flex rounded-xl overflow-hidden border border-slate-700/50 bg-slate-800/30">
+        <Link
+          href="/"
+          className="flex items-center gap-2 px-6 py-3 bg-purple-600/20 text-purple-300 border-r border-slate-700/50 font-medium"
+        >
+          <span>🎤</span>
+          <span>Voice DJ</span>
+        </Link>
+        <Link
+          href="/improv"
+          className="flex items-center gap-2 px-6 py-3 text-slate-400 hover:text-white hover:bg-slate-700/30 transition-colors font-medium"
+        >
+          <span>🎚️</span>
+          <span>Layer Builder</span>
+        </Link>
+      </div>
 
       {/* Session Log */}
       {sessionLog.length > 0 && (

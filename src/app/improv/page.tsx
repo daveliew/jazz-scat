@@ -327,30 +327,7 @@ export default function ImprovPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
-      {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50">
-        <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link href="/" className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Jazz Scat
-          </Link>
-          <div className="flex gap-4">
-            <Link
-              href="/"
-              className="px-4 py-2 rounded-full text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-700/50 transition-colors"
-            >
-              Voice DJ
-            </Link>
-            <Link
-              href="/improv"
-              className="px-4 py-2 rounded-full text-sm font-medium bg-teal-600/20 text-teal-300 border border-teal-500/50"
-            >
-              Layer Builder
-            </Link>
-          </div>
-        </div>
-      </nav>
-
-      <div className="max-w-3xl mx-auto px-4 py-8 pt-20">
+      <div className="max-w-3xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-teal-400 to-cyan-400 bg-clip-text text-transparent">
@@ -423,6 +400,26 @@ export default function ImprovPage() {
             <li>Record your vocal improv (30 seconds max)</li>
             <li>Get feedback from the AI Coach</li>
           </ol>
+        </div>
+
+        {/* Footer Mode Tabs */}
+        <div className="mt-8 flex justify-center">
+          <div className="flex rounded-xl overflow-hidden border border-slate-700/50 bg-slate-800/30">
+            <Link
+              href="/"
+              className="flex items-center gap-2 px-6 py-3 text-slate-400 hover:text-white hover:bg-slate-700/30 transition-colors font-medium border-r border-slate-700/50"
+            >
+              <span>🎤</span>
+              <span>Voice DJ</span>
+            </Link>
+            <Link
+              href="/improv"
+              className="flex items-center gap-2 px-6 py-3 bg-teal-600/20 text-teal-300 font-medium"
+            >
+              <span>🎚️</span>
+              <span>Layer Builder</span>
+            </Link>
+          </div>
         </div>
       </div>
     </div>
