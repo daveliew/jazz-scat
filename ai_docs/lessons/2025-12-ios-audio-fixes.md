@@ -82,9 +82,36 @@ try {
 
 - [ ] `AudioContext` created/resumed inside user gesture handler
 - [ ] Audio unlock function called on first tap (before WebRTC)
+- [ ] **iOS detection** before running unlock (skip on desktop!)
 - [ ] All `audio.play()` calls wrapped in try/catch
 - [ ] Fallback UI exists for blocked autoplay
 - [ ] MediaRecorder uses codec fallback for iOS (`audio/mp4` preferred)
+
+## Regression Warning: Don't Clear src on Desktop
+
+**Issue Found**: Setting `backingTrackRef.current.src = ''` after unlock puts the audio element in an invalid state on desktop browsers, causing subsequent `play()` calls to fail.
+
+**Fix**: Detect iOS and skip unlock entirely on desktop:
+
+```typescript
+const isIOSDevice = () => {
+  if (typeof window === 'undefined') return false;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+};
+
+const unlockAudioForIOS = useCallback(async () => {
+  if (isAudioUnlocked) return;
+
+  // Skip on desktop - they don't need unlock
+  if (!isIOSDevice()) {
+    setIsAudioUnlocked(true);
+    return;
+  }
+
+  // ... iOS unlock logic
+}, [isAudioUnlocked]);
+```
 
 ## Memory Triggers
 
@@ -92,6 +119,7 @@ try {
 - **"iOS Chrome = Safari in disguise"** - All iOS browsers use WebKit
 - **"Unlock first, connect second"** - Silent audio play before WebRTC
 - **"Try/catch every play()"** - Always have fallback for iOS
+- **"Detect iOS before unlock"** - Desktop doesn't need unlock, can cause regressions
 
 ## Files Modified
 
