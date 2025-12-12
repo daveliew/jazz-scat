@@ -4,6 +4,8 @@
 
 🥈 **2nd Place** - [ElevenLabs Worldwide Hackathon](https://singapore.aitinkerers.org/p/elevenlabs-global-hackathon-singapore) | Singapore | Dec 11, 2025
 
+📽️ [Demo Deck](https://gamma.app/docs/JazzScat-DJ--x5gse2gf7qr1wlo?mode=doc)
+
 ## The Problem
 
 Learning to sing, harmonize, or improvise is hard without:
@@ -165,8 +167,8 @@ Built after the demo to enhance the experience:
 
 ## Tech Stack
 
-- **Framework**: Next.js 15 + React 18
-- **Styling**: Tailwind CSS
+- **Framework**: Next.js 16 + React 19
+- **Styling**: Tailwind CSS 4
 - **UI Components**: Radix UI
 - **Voice AI**: ElevenLabs Conversational AI
 - **Audio**: ElevenLabs Sound Generation + Web Audio API
