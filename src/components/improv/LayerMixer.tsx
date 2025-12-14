@@ -33,7 +33,6 @@ export function LayerMixer({
   const aiLayers = layers.filter((l) => l.type !== 'user');
   const userLayer = layers.find((l) => l.type === 'user');
   const hasAnyAudio = layers.some((l) => l.audioUrl);
-  const isAnyLayerGenerating = layers.some((l) => l.isLoading);
 
   return (
     <div className="space-y-4">
@@ -47,7 +46,7 @@ export function LayerMixer({
             onPlayToggle={() => onPlayToggle(layer.id)}
             onVolumeChange={(vol) => onVolumeChange(layer.id, vol)}
             onMuteToggle={() => onMuteToggle(layer.id)}
-            disabled={disabled || isRecording || isAnyLayerGenerating}
+            disabled={disabled || isRecording}
           />
         ))}
       </div>

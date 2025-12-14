@@ -80,6 +80,10 @@ export default function ImprovPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
+  // Generation queue to prevent 429 rate limits
+  const generationQueueRef = useRef<string[]>([]);
+  const isProcessingQueueRef = useRef(false);
+
   // Initialize audio mixer
   useEffect(() => {
     mixerRef.current = getAudioMixer();
@@ -100,13 +104,11 @@ export default function ImprovPage() {
     );
   }, []);
 
-  // Generate AI layer
-  const handleGenerateLayer = useCallback(
+  // Internal function to generate a single layer (called by queue processor)
+  const generateLayerInternal = useCallback(
     async (layerId: string) => {
       const layer = layers.find((l) => l.id === layerId);
       if (!layer || layer.type === 'user') return;
-
-      updateLayer(layerId, { isLoading: true });
 
       try {
         const response = await fetch('/api/generate-layer', {
@@ -153,6 +155,46 @@ export default function ImprovPage() {
       }
     },
     [layers, genre, bpm, updateLayer]
+  );
+
+  // Process generation queue one at a time
+  const processGenerationQueue = useCallback(async () => {
+    if (isProcessingQueueRef.current || generationQueueRef.current.length === 0) {
+      return;
+    }
+
+    isProcessingQueueRef.current = true;
+
+    while (generationQueueRef.current.length > 0) {
+      const layerId = generationQueueRef.current[0];
+      await generateLayerInternal(layerId);
+      generationQueueRef.current.shift();
+    }
+
+    isProcessingQueueRef.current = false;
+  }, [generateLayerInternal]);
+
+  // Queue a layer for generation (public handler)
+  const handleGenerateLayer = useCallback(
+    (layerId: string) => {
+      const layer = layers.find((l) => l.id === layerId);
+      if (!layer || layer.type === 'user') return;
+
+      // Skip if already in queue or loading
+      if (generationQueueRef.current.includes(layerId) || layer.isLoading) {
+        return;
+      }
+
+      // Mark as loading immediately for visual feedback
+      updateLayer(layerId, { isLoading: true });
+
+      // Add to queue
+      generationQueueRef.current.push(layerId);
+
+      // Start processing
+      processGenerationQueue();
+    },
+    [layers, updateLayer, processGenerationQueue]
   );
 
   // Recording handlers - stopRecording defined first since startRecording references it
