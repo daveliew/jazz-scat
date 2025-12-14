@@ -69,8 +69,10 @@ export default function ImprovPage() {
   const [genre, setGenre] = useState<Genre>('doo-wop');
   const [bpm, setBpm] = useState(GENRE_OPTIONS[0].defaultBpm);
   const [layers, setLayers] = useState<TrackLayer[]>(createInitialLayers());
-  const [isPlayingAll, setIsPlayingAll] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+
+  // Derive playback state from layers (shows Stop All if ANY layer is playing)
+  const isAnyPlaying = layers.some((l) => l.isPlaying);
   const [coachFeedback, setCoachFeedback] = useState<string | null>(null);
   const [coachTips, setCoachTips] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -285,7 +287,6 @@ export default function ImprovPage() {
   const handlePlayAll = useCallback(async () => {
     await mixerRef.current?.initialize();
     mixerRef.current?.playAllTracks(true);
-    setIsPlayingAll(true);
 
     // Update layer states
     setLayers((prev) =>
@@ -298,7 +299,6 @@ export default function ImprovPage() {
 
   const handleStopAll = useCallback(() => {
     mixerRef.current?.stopAllTracks();
-    setIsPlayingAll(false);
 
     // Update layer states
     setLayers((prev) =>
@@ -466,7 +466,7 @@ export default function ImprovPage() {
               bpm={bpm}
               onGenreChange={setGenre}
               onBpmChange={setBpm}
-              disabled={isRecording || isPlayingAll}
+              disabled={isRecording || isAnyPlaying}
             />
 
             {/* New Session Button */}
@@ -491,7 +491,7 @@ export default function ImprovPage() {
               onPlayToggle={handlePlayToggle}
               onPlayAll={handlePlayAll}
               onStopAll={handleStopAll}
-              isPlayingAll={isPlayingAll}
+              isPlayingAll={isAnyPlaying}
               isRecording={isRecording}
             />
           </main>
