@@ -124,6 +124,11 @@ export class AudioMixer {
     }
   }
 
+  isTrackPlaying(id: string): boolean {
+    const track = this.tracks.get(id);
+    return track?.isPlaying ?? false;
+  }
+
   playAllTracks(loop = false): void {
     const startTime = this.context?.currentTime || 0;
 

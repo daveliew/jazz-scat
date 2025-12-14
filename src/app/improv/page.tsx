@@ -322,22 +322,19 @@ export default function ImprovPage() {
   const handlePlayToggle = useCallback(async (layerId: string) => {
     await mixerRef.current?.initialize();
 
-    // Use functional update to get latest state (avoids stale closure)
-    setLayers(prev => {
-      const layer = prev.find(l => l.id === layerId);
-      if (!layer?.audioUrl) return prev;
+    // Check mixer state directly (source of truth, avoids sync issues)
+    const isCurrentlyPlaying = mixerRef.current?.isTrackPlaying(layerId);
 
-      if (layer.isPlaying) {
-        mixerRef.current?.stopTrack(layerId);
-      } else {
-        mixerRef.current?.playTrack(layerId, true);
-      }
+    // Perform audio operation OUTSIDE of setState
+    if (isCurrentlyPlaying) {
+      mixerRef.current?.stopTrack(layerId);
+    } else {
+      mixerRef.current?.playTrack(layerId, true);
+    }
 
-      return prev.map(l =>
-        l.id === layerId ? { ...l, isPlaying: !l.isPlaying } : l
-      );
-    });
-  }, []);
+    // Then update React state to match
+    updateLayer(layerId, { isPlaying: !isCurrentlyPlaying });
+  }, [updateLayer]);
 
   // AI Coach analysis
   const handleAnalyze = useCallback(async () => {
