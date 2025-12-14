@@ -940,9 +940,8 @@ export default function Home() {
           setAppState('speaking');
           setStatusText('');
         }
-      } else if (appState === 'speaking' || appState === 'processing') {
-        // After speaking or processing, go back to listening
-        // But NOT if we're generating or playing music
+      } else if (appState === 'speaking' || appState === 'processing' || appState === 'playing') {
+        // After speaking, go back to listening (even while music plays in background)
         setAppState('listening');
         setStatusText('Listening...');
       }
