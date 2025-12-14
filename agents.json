@@ -1,0 +1,9 @@
+{
+  "agents": [
+    {
+      "name": "jazz-scat-dj",
+      "path": "agent_configs/jazz-scat-dj.json",
+      "agent_id": "agent_5601kc8gp4yqfq28dtsx9nrjz1nh"
+    }
+  ]
+}
