@@ -82,9 +82,11 @@ export default function ImprovPage() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Generation queue to prevent 429 rate limits
+  // Generation queue to prevent 429 rate limits (ElevenLabs allows 2 concurrent)
   const generationQueueRef = useRef<string[]>([]);
-  const isProcessingQueueRef = useRef(false);
+  const activeRequestsRef = useRef(0);
+  const processQueueRef = useRef<() => void>(() => {});
+  const MAX_CONCURRENT = 2;
 
   // Initialize audio mixer
   useEffect(() => {
@@ -159,22 +161,29 @@ export default function ImprovPage() {
     [layers, genre, bpm, updateLayer]
   );
 
-  // Process generation queue one at a time
-  const processGenerationQueue = useCallback(async () => {
-    if (isProcessingQueueRef.current || generationQueueRef.current.length === 0) {
-      return;
+  // Process generation queue with up to 2 concurrent requests
+  const processGenerationQueue = useCallback(() => {
+    // Start new requests while under the limit and queue has items
+    while (
+      activeRequestsRef.current < MAX_CONCURRENT &&
+      generationQueueRef.current.length > 0
+    ) {
+      const layerId = generationQueueRef.current.shift()!;
+      activeRequestsRef.current++;
+
+      // Fire request (don't await - allow parallel execution)
+      generateLayerInternal(layerId).finally(() => {
+        activeRequestsRef.current--;
+        // Check if more queued items can start (use ref for self-reference)
+        processQueueRef.current();
+      });
     }
-
-    isProcessingQueueRef.current = true;
-
-    while (generationQueueRef.current.length > 0) {
-      const layerId = generationQueueRef.current[0];
-      await generateLayerInternal(layerId);
-      generationQueueRef.current.shift();
-    }
-
-    isProcessingQueueRef.current = false;
   }, [generateLayerInternal]);
+
+  // Keep ref updated for recursive calls
+  useEffect(() => {
+    processQueueRef.current = processGenerationQueue;
+  }, [processGenerationQueue]);
 
   // Queue a layer for generation (public handler)
   const handleGenerateLayer = useCallback(
@@ -388,7 +397,6 @@ export default function ImprovPage() {
   const handleNewSession = useCallback(() => {
     mixerRef.current?.stopAllTracks();
     setLayers(createInitialLayers());
-    setIsPlayingAll(false);
     setIsRecording(false);
     setCoachFeedback(null);
     setCoachTips([]);
