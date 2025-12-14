@@ -2,7 +2,7 @@
 
 export type LayerType = 'bass' | 'harmony' | 'rhythm' | 'user';
 
-export type Genre = 'doo-wop' | 'gospel' | 'barbershop' | 'lo-fi' | 'jazz' | 'pop';
+export type Genre = 'doo-wop' | 'gospel' | 'barbershop' | 'lo-fi' | 'jazz' | 'pop' | 'kpop';
 
 export interface GenreOption {
   id: Genre;
@@ -105,6 +105,13 @@ export const GENRE_OPTIONS: GenreOption[] = [
     description: 'Modern vocal arrangements',
     bpmRange: [90, 130],
     defaultBpm: 110,
+  },
+  {
+    id: 'kpop',
+    name: 'K-Pop',
+    description: 'Korean pop with catchy hooks',
+    bpmRange: [100, 140],
+    defaultBpm: 120,
   },
 ];
 

@@ -110,6 +110,7 @@ function generateCoachFeedback(params: {
     'lo-fi': 'Lo-fi vibes are all about that chill, relaxed feel. Your vocal adds',
     'jazz': 'Jazz scat singing is pure freedom! Your improvisational choices',
     'pop': 'Pop vocals need to be catchy and memorable! Your performance',
+    'kpop': 'K-Pop is all about catchy hooks and energy! Your vocal style',
   };
 
   // Analyze transcription content
