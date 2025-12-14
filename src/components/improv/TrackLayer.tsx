@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { TrackLayer as TrackLayerType, LAYER_CONFIG } from '@/types/improv';
 
 interface TrackLayerProps {
@@ -26,6 +27,24 @@ export function TrackLayer({
   const config = LAYER_CONFIG[layer.type];
   const isUserLayer = layer.type === 'user';
   const hasAudio = !!layer.audioUrl;
+
+  // Track elapsed time while generating
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!layer.isLoading) {
+      // Reset counter when generation completes - valid timer reset pattern
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setElapsedSeconds((s) => s + 1);
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [layer.isLoading]);
 
   return (
     <div
@@ -54,7 +73,9 @@ export function TrackLayer({
                 />
               ))}
             </div>
-            <span className="ml-2 text-xs text-slate-400">Generating...</span>
+            <span className="ml-2 text-xs text-slate-400">
+              Generating... {elapsedSeconds}s
+            </span>
           </div>
         ) : hasAudio ? (
           <div className="absolute inset-0 flex items-center px-2">
