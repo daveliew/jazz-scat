@@ -119,6 +119,13 @@ export default function ImprovPage() {
           }),
         });
 
+        // Handle rate limit errors with friendly message
+        if (response.status === 429) {
+          updateLayer(layerId, { isLoading: false });
+          alert('Please wait a moment before generating another layer.');
+          return;
+        }
+
         const data = await response.json();
 
         if (data.success && data.audioUrl) {
