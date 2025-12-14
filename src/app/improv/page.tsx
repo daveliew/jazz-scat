@@ -260,6 +260,25 @@ export default function ImprovPage() {
     );
   }, []);
 
+  // Individual layer play/pause toggle
+  const handlePlayToggle = useCallback(async (layerId: string) => {
+    const layer = layers.find(l => l.id === layerId);
+    if (!layer?.audioUrl) return;
+
+    await mixerRef.current?.initialize();
+
+    if (layer.isPlaying) {
+      mixerRef.current?.stopTrack(layerId);
+    } else {
+      mixerRef.current?.playTrack(layerId, true); // loop
+    }
+
+    // Update layer state
+    setLayers(prev => prev.map(l =>
+      l.id === layerId ? { ...l, isPlaying: !l.isPlaying } : l
+    ));
+  }, [layers]);
+
   // AI Coach analysis
   const handleAnalyze = useCallback(async () => {
     const userLayer = layers.find((l) => l.type === 'user');
@@ -418,6 +437,7 @@ export default function ImprovPage() {
               onRecordLayer={handleRecordLayer}
               onVolumeChange={handleVolumeChange}
               onMuteToggle={handleMuteToggle}
+              onPlayToggle={handlePlayToggle}
               onPlayAll={handlePlayAll}
               onStopAll={handleStopAll}
               isPlayingAll={isPlayingAll}

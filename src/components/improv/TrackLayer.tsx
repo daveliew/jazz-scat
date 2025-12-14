@@ -6,6 +6,7 @@ interface TrackLayerProps {
   layer: TrackLayerType;
   onGenerate?: () => void;
   onRecord?: () => void;
+  onPlayToggle?: () => void;
   onVolumeChange: (volume: number) => void;
   onMuteToggle: () => void;
   isRecording?: boolean;
@@ -16,6 +17,7 @@ export function TrackLayer({
   layer,
   onGenerate,
   onRecord,
+  onPlayToggle,
   onVolumeChange,
   onMuteToggle,
   isRecording = false,
@@ -94,8 +96,22 @@ export function TrackLayer({
         )}
       </div>
 
-      {/* Volume Control */}
+      {/* Playback & Volume Control */}
       <div className="flex items-center gap-2">
+        {/* Individual play/pause - only show when layer has audio */}
+        {hasAudio && (
+          <button
+            onClick={onPlayToggle}
+            disabled={disabled || layer.isLoading}
+            className={`p-1.5 rounded transition-colors ${
+              layer.isPlaying
+                ? 'text-yellow-400 hover:text-yellow-300'
+                : 'text-green-400 hover:text-green-300'
+            } disabled:opacity-50 disabled:cursor-not-allowed`}
+          >
+            {layer.isPlaying ? '⏸️' : '▶️'}
+          </button>
+        )}
         <button
           onClick={onMuteToggle}
           className={`p-1 rounded transition-colors ${

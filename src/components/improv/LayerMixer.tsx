@@ -9,6 +9,7 @@ interface LayerMixerProps {
   onRecordLayer: () => void;
   onVolumeChange: (layerId: string, volume: number) => void;
   onMuteToggle: (layerId: string) => void;
+  onPlayToggle: (layerId: string) => void;
   onPlayAll: () => void;
   onStopAll: () => void;
   isPlayingAll: boolean;
@@ -22,6 +23,7 @@ export function LayerMixer({
   onRecordLayer,
   onVolumeChange,
   onMuteToggle,
+  onPlayToggle,
   onPlayAll,
   onStopAll,
   isPlayingAll,
@@ -41,6 +43,7 @@ export function LayerMixer({
             key={layer.id}
             layer={layer}
             onGenerate={() => onGenerateLayer(layer.id)}
+            onPlayToggle={() => onPlayToggle(layer.id)}
             onVolumeChange={(vol) => onVolumeChange(layer.id, vol)}
             onMuteToggle={() => onMuteToggle(layer.id)}
             disabled={disabled || isRecording}
@@ -60,6 +63,7 @@ export function LayerMixer({
         <TrackLayer
           layer={userLayer}
           onRecord={onRecordLayer}
+          onPlayToggle={() => onPlayToggle(userLayer.id)}
           onVolumeChange={(vol) => onVolumeChange(userLayer.id, vol)}
           onMuteToggle={() => onMuteToggle(userLayer.id)}
           isRecording={isRecording}
