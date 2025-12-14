@@ -14,15 +14,23 @@ export class AudioMixer {
   private masterGain: GainNode | null = null;
 
   async initialize(): Promise<void> {
-    if (!this.context) {
-      this.context = new AudioContext();
-      this.masterGain = this.context.createGain();
-      this.masterGain.connect(this.context.destination);
-    }
+    try {
+      if (!this.context) {
+        this.context = new AudioContext();
+        this.masterGain = this.context.createGain();
+        this.masterGain.connect(this.context.destination);
+      }
 
-    // Resume context if suspended (browser autoplay policy)
-    if (this.context.state === 'suspended') {
-      await this.context.resume();
+      // Resume context if suspended (browser autoplay policy)
+      if (this.context.state === 'suspended') {
+        await this.context.resume();
+      }
+    } catch (err) {
+      console.error('AudioContext initialization failed:', err);
+      // Re-throw with user-friendly message
+      throw new Error(
+        'Audio playback not available. Please tap the screen first or check browser permissions.'
+      );
     }
   }
 

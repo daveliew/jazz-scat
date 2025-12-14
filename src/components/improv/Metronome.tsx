@@ -9,37 +9,52 @@ interface MetronomeProps {
 export function Metronome({ bpm }: MetronomeProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentBeat, setCurrentBeat] = useState(0);
+  const [audioError, setAudioError] = useState<string | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Initialize AudioContext on first interaction
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
-      audioContextRef.current = new AudioContext();
+      try {
+        audioContextRef.current = new AudioContext();
+        setAudioError(null);
+      } catch (err) {
+        console.error('Metronome AudioContext failed:', err);
+        setAudioError('Audio not available');
+        return null;
+      }
     }
     return audioContextRef.current;
   }, []);
 
   // Play a click sound
-  const playClick = useCallback((isDownbeat: boolean) => {
+  const playClick = useCallback(async (isDownbeat: boolean) => {
     const ctx = getAudioContext();
-    if (ctx.state === 'suspended') {
-      ctx.resume();
+    if (!ctx) return; // Audio not available
+
+    try {
+      if (ctx.state === 'suspended') {
+        await ctx.resume();
+      }
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      // Higher pitch and louder on downbeat
+      osc.frequency.value = isDownbeat ? 1000 : 800;
+      gain.gain.value = isDownbeat ? 0.3 : 0.15;
+
+      osc.start(ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
+      osc.stop(ctx.currentTime + 0.05);
+    } catch (err) {
+      console.error('Metronome playClick failed:', err);
+      setAudioError('Audio playback failed');
     }
-
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    // Higher pitch and louder on downbeat
-    osc.frequency.value = isDownbeat ? 1000 : 800;
-    gain.gain.value = isDownbeat ? 0.3 : 0.15;
-
-    osc.start(ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-    osc.stop(ctx.currentTime + 0.05);
   }, [getAudioContext]);
 
   // Start/stop metronome
@@ -99,13 +114,17 @@ export function Metronome({ bpm }: MetronomeProps) {
     <div className="flex items-center gap-3 bg-slate-800/50 rounded-lg px-4 py-2">
       <button
         onClick={toggleMetronome}
+        disabled={!!audioError}
         className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-          isPlaying
-            ? 'bg-amber-600 hover:bg-amber-700 text-white'
-            : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
+          audioError
+            ? 'bg-slate-700 text-slate-500 cursor-not-allowed'
+            : isPlaying
+              ? 'bg-amber-600 hover:bg-amber-700 text-white'
+              : 'bg-slate-700 hover:bg-slate-600 text-slate-300'
         }`}
+        title={audioError || undefined}
       >
-        {isPlaying ? '⏸ Stop' : '🎵 Metronome'}
+        {audioError ? '🔇 Unavailable' : isPlaying ? '⏸ Stop' : '🎵 Metronome'}
       </button>
 
       {/* Beat indicators */}

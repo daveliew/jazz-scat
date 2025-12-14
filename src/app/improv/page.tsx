@@ -70,12 +70,21 @@ export default function ImprovPage() {
   const [bpm, setBpm] = useState(GENRE_OPTIONS[0].defaultBpm);
   const [layers, setLayers] = useState<TrackLayer[]>(createInitialLayers());
   const [isRecording, setIsRecording] = useState(false);
+  const [uiError, setUiError] = useState<string | null>(null);
 
   // Derive playback state from layers (shows Stop All if ANY layer is playing)
   const isAnyPlaying = layers.some((l) => l.isPlaying);
   const [coachFeedback, setCoachFeedback] = useState<string | null>(null);
   const [coachTips, setCoachTips] = useState<string[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // Auto-clear UI error after 5 seconds
+  useEffect(() => {
+    if (uiError) {
+      const timer = setTimeout(() => setUiError(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [uiError]);
 
   // Refs
   const mixerRef = useRef<AudioMixer | null>(null);
@@ -128,7 +137,7 @@ export default function ImprovPage() {
         // Handle rate limit errors with friendly message
         if (response.status === 429) {
           updateLayer(layerId, { isLoading: false });
-          alert('Please wait a moment before generating another layer.');
+          setUiError('Please wait a moment before generating another layer.');
           return;
         }
 
@@ -150,12 +159,12 @@ export default function ImprovPage() {
         } else {
           console.error('Generation failed:', data.error);
           updateLayer(layerId, { isLoading: false });
-          alert(`Failed to generate: ${data.error || 'Unknown error'}`);
+          setUiError(`Failed to generate: ${data.error || 'Unknown error'}`);
         }
       } catch (error) {
         console.error('Error generating layer:', error);
         updateLayer(layerId, { isLoading: false });
-        alert('Failed to generate layer. Check console for details.');
+        setUiError('Failed to generate layer. Please try again.');
       }
     },
     [layers, genre, bpm, updateLayer]
@@ -259,7 +268,20 @@ export default function ImprovPage() {
       }, 30000);
     } catch (error) {
       console.error('Error starting recording:', error);
-      alert('Could not access microphone. Please check permissions.');
+
+      // Detect specific permission errors
+      let errorMessage = 'Could not access microphone';
+      if (error instanceof DOMException) {
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+          errorMessage = 'Microphone access denied. Please enable in browser settings.';
+        } else if (error.name === 'NotFoundError') {
+          errorMessage = 'No microphone found. Please connect a microphone.';
+        } else if (error.name === 'NotReadableError') {
+          errorMessage = 'Microphone is in use by another app.';
+        }
+      }
+
+      setUiError(errorMessage);
     }
   }, [updateLayer]);
 
@@ -460,6 +482,19 @@ export default function ImprovPage() {
             </Link>
           </div>
         </div>
+
+        {/* Error Banner */}
+        {uiError && (
+          <div className="mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg flex items-center justify-between">
+            <span className="text-red-200">{uiError}</span>
+            <button
+              onClick={() => setUiError(null)}
+              className="text-red-300 hover:text-white transition-colors"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Two-Column Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">

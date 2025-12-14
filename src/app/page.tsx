@@ -172,7 +172,10 @@ export default function Home() {
       setError(null);
 
       // Unlock audio for iOS
-      await actions.unlockAudioForIOS();
+      const audioUnlocked = await actions.unlockAudioForIOS();
+      if (!audioUnlocked) {
+        throw new Error('Audio not available. Please tap the screen and try again.');
+      }
 
       await navigator.mediaDevices.getUserMedia({ audio: true });
 
@@ -183,7 +186,22 @@ export default function Home() {
       await conversation.startSession({ signedUrl });
     } catch (err) {
       console.error('Connection error:', err);
-      setError(err instanceof Error ? err.message : 'Connection failed');
+
+      // Detect specific permission errors
+      let errorMessage = 'Connection failed';
+      if (err instanceof DOMException) {
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          errorMessage = 'Microphone access denied. Please enable in browser settings.';
+        } else if (err.name === 'NotFoundError') {
+          errorMessage = 'No microphone found. Please connect a microphone.';
+        } else if (err.name === 'NotReadableError') {
+          errorMessage = 'Microphone is in use by another app.';
+        }
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      }
+
+      setError(errorMessage);
       setAppState('idle');
       setStatusText('');
     }

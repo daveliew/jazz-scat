@@ -59,13 +59,13 @@ export function useVoiceDJ() {
 
   // ===== iOS Audio Unlock =====
 
-  const unlockAudioForIOS = useCallback(async () => {
-    if (state.isAudioUnlocked) return;
+  const unlockAudioForIOS = useCallback(async (): Promise<boolean> => {
+    if (state.isAudioUnlocked) return true;
 
     if (!isIOSDevice()) {
       console.log('Skipping audio unlock (not iOS)');
       setState((prev) => ({ ...prev, isAudioUnlocked: true }));
-      return;
+      return true;
     }
 
     if (backingTrackRef.current) {
@@ -81,10 +81,15 @@ export function useVoiceDJ() {
         backingTrackRef.current.src = '';
         setState((prev) => ({ ...prev, isAudioUnlocked: true }));
         console.log('iOS audio unlocked successfully');
+        return true;
       } catch (e) {
-        console.log('Audio unlock skipped:', e);
+        console.warn('iOS audio unlock failed:', e);
+        // Update state to indicate unlock failed - caller should handle
+        setState((prev) => ({ ...prev, isAudioUnlocked: false }));
+        return false;
       }
     }
+    return false;
   }, [state.isAudioUnlocked]);
 
   // ===== Backing Track Controls =====
@@ -208,15 +213,25 @@ export function useVoiceDJ() {
       }, 30000);
     } catch (err) {
       console.error('Recording error:', err);
+
+      // Detect specific permission errors
+      const isPermissionError =
+        err instanceof DOMException &&
+        (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError');
+
+      const errorMessage = isPermissionError
+        ? 'Microphone blocked. Enable in browser settings.'
+        : 'Could not access microphone';
+
       setState((prev) => ({
         ...prev,
-        statusText: 'Mic access denied',
+        statusText: errorMessage,
         isRecording: false,
         appState: prev.isPlaying
           ? prev.appState
           : prev.isConnected
-          ? 'listening'
-          : 'idle',
+            ? 'listening'
+            : 'idle',
       }));
     }
   }, [state.isPlaying]);
