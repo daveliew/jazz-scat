@@ -262,22 +262,24 @@ export default function ImprovPage() {
 
   // Individual layer play/pause toggle
   const handlePlayToggle = useCallback(async (layerId: string) => {
-    const layer = layers.find(l => l.id === layerId);
-    if (!layer?.audioUrl) return;
-
     await mixerRef.current?.initialize();
 
-    if (layer.isPlaying) {
-      mixerRef.current?.stopTrack(layerId);
-    } else {
-      mixerRef.current?.playTrack(layerId, true); // loop
-    }
+    // Use functional update to get latest state (avoids stale closure)
+    setLayers(prev => {
+      const layer = prev.find(l => l.id === layerId);
+      if (!layer?.audioUrl) return prev;
 
-    // Update layer state
-    setLayers(prev => prev.map(l =>
-      l.id === layerId ? { ...l, isPlaying: !l.isPlaying } : l
-    ));
-  }, [layers]);
+      if (layer.isPlaying) {
+        mixerRef.current?.stopTrack(layerId);
+      } else {
+        mixerRef.current?.playTrack(layerId, true);
+      }
+
+      return prev.map(l =>
+        l.id === layerId ? { ...l, isPlaying: !l.isPlaying } : l
+      );
+    });
+  }, []);
 
   // AI Coach analysis
   const handleAnalyze = useCallback(async () => {
