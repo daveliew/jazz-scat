@@ -52,7 +52,11 @@ interface LogEntry {
   role: 'user' | 'agent';
   text: string;
   timestamp: Date;
+  seq: number; // Sequence number for reliable ordering
 }
+
+// Global sequence counter for log entries
+let logSeq = 0;
 
 export default function Home() {
   // Connection state
@@ -848,6 +852,7 @@ export default function Home() {
       setStatusText('Listening...');
       setError(null);
       setSessionLog([]); // Clear session log on new connection
+      logSeq = 0; // Reset sequence counter
       setLiveTranscript(''); // Clear live transcript
 
       // Connect Scribe for live speech-to-text
@@ -907,6 +912,7 @@ export default function Home() {
             role: 'user',
             text: newText,
             timestamp: new Date(),
+            seq: logSeq++,
           }];
         });
         // User finished speaking, agent is processing
@@ -919,6 +925,7 @@ export default function Home() {
           role: 'agent',
           text: message.message,
           timestamp: new Date(),
+          seq: logSeq++,
         }]);
         // Also parse for action triggers (fallback mechanism)
         parseAndTriggerAction(message.message);
@@ -1013,6 +1020,35 @@ export default function Home() {
     }
   };
 
+  // Get orb gradient based on state priority: recording > generating > music playing > default
+  const getOrbGradient = () => {
+    if (isLooperMode && isRecordingLayer) {
+      return 'from-emerald-500 to-green-500'; // Recording layer
+    }
+    // Show purple during generating (even if music already playing) so ✨ stands out
+    if (appState === 'generating') {
+      return 'from-purple-500 to-pink-500'; // Generating
+    }
+    if (isPlaying && backingTrackUrl) {
+      return 'from-blue-500 to-cyan-500'; // Music playing
+    }
+    return 'from-purple-500 to-pink-500'; // Default
+  };
+
+  // Darker gradient for inner ring
+  const getOrbGradientDark = () => {
+    if (isLooperMode && isRecordingLayer) {
+      return 'from-emerald-600 to-green-600';
+    }
+    if (appState === 'generating') {
+      return 'from-purple-600 to-pink-600'; // Generating
+    }
+    if (isPlaying && backingTrackUrl) {
+      return 'from-blue-600 to-cyan-600';
+    }
+    return 'from-purple-600 to-pink-600';
+  };
+
   // Layer indicators
   const hasLayers = layers.some(l => l.audioUrl);
 
@@ -1069,11 +1105,11 @@ export default function Home() {
           <main className="space-y-6">
             {/* Visual Element + Main CTA */}
             <div className="flex flex-col items-center p-8 bg-slate-800/30 rounded-xl border border-slate-700/50">
-              {/* Animated rings - green when in looper mode */}
+              {/* Animated rings - color shows state: green=recording, blue=music playing, purple=default */}
               <div className="relative w-40 h-40 md:w-48 md:h-48 mb-6">
-                <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${isLooperMode && isRecordingLayer ? 'from-emerald-500 to-green-500' : 'from-purple-500 to-pink-500'} opacity-20 ${getRingAnimation()}`} />
-                <div className={`absolute inset-3 rounded-full bg-gradient-to-r ${isLooperMode && isRecordingLayer ? 'from-emerald-500 to-green-500' : 'from-purple-500 to-pink-500'} opacity-30 ${appState !== 'idle' ? 'animate-pulse' : ''}`} />
-                <div className={`absolute inset-6 rounded-full bg-gradient-to-r ${isLooperMode && isRecordingLayer ? 'from-emerald-600 to-green-600' : 'from-purple-600 to-pink-600'} opacity-50`} />
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${getOrbGradient()} opacity-20 ${getRingAnimation()}`} />
+                <div className={`absolute inset-3 rounded-full bg-gradient-to-r ${getOrbGradient()} opacity-30 ${appState !== 'idle' ? 'animate-pulse' : ''}`} />
+                <div className={`absolute inset-6 rounded-full bg-gradient-to-r ${getOrbGradientDark()} opacity-50`} />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-5xl md:text-6xl">
                     {isLooperMode && isRecordingLayer && '🔄'}
@@ -1368,7 +1404,7 @@ export default function Home() {
                 {sessionLog.length === 0 && !isConnected && (
                   <p className="text-slate-500 text-sm italic">Start a session to see the conversation...</p>
                 )}
-                {sessionLog.map((entry, index) => (
+                {[...sessionLog].sort((a, b) => a.seq - b.seq).map((entry, index) => (
                   <div key={index} className="text-sm mb-2">
                     <span className={entry.role === 'agent' ? 'text-purple-400' : 'text-blue-400'}>
                       {entry.role === 'agent' ? '🎵 DJ: ' : '🎤 You: '}
