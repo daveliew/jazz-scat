@@ -13,6 +13,8 @@ import {
   GENRE_OPTIONS,
 } from '@/types/improv';
 import { getAudioMixer, AudioMixer } from '@/lib/audio-mixer';
+import { IABWarning } from '@/components/IABWarning';
+import { detectInAppBrowser } from '@/lib/detect-iab';
 
 // Initial layer states
 function createInitialLayers(): TrackLayer[] {
@@ -65,6 +67,9 @@ function createInitialLayers(): TrackLayer[] {
 }
 
 export default function ImprovPage() {
+  // IAB detection - use lazy initialization to check on first render
+  const [iabInfo] = useState(() => detectInAppBrowser());
+
   // State
   const [genre, setGenre] = useState<Genre>('doo-wop');
   const [bpm, setBpm] = useState(GENRE_OPTIONS[0].defaultBpm);
@@ -420,6 +425,11 @@ export default function ImprovPage() {
     setCoachFeedback(null);
     setCoachTips([]);
   }, []);
+
+  // Show warning if in-app browser detected
+  if (iabInfo.isIAB) {
+    return <IABWarning appName={iabInfo.name || 'This app'} />;
+  }
 
   const hasUserRecording = !!layers.find((l) => l.type === 'user')?.audioUrl;
 

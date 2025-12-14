@@ -1,15 +1,20 @@
 'use client';
 
 import { useConversation, useScribe } from '@elevenlabs/react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useVoiceDJ } from '@/hooks/useVoiceDJ';
 import { DJOrb } from '@/components/voice-dj/DJOrb';
 import { PlaybackControls } from '@/components/voice-dj/PlaybackControls';
 import { SessionLog } from '@/components/voice-dj/SessionLog';
 import { UserRecordingCard } from '@/components/voice-dj/UserRecordingCard';
+import { IABWarning } from '@/components/IABWarning';
+import { detectInAppBrowser } from '@/lib/detect-iab';
 
 export default function Home() {
+  // IAB detection - use lazy initialization to check on first render
+  const [iabInfo] = useState(() => detectInAppBrowser());
+
   const {
     state,
     refs,
@@ -212,6 +217,11 @@ export default function Home() {
     actions.stopAll();
     await conversation.endSession();
   }, [conversation, actions]);
+
+  // Show warning if in-app browser detected
+  if (iabInfo.isIAB) {
+    return <IABWarning appName={iabInfo.name || 'This app'} />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
