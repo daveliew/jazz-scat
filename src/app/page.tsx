@@ -1047,28 +1047,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Looper Mode Banner - DJ is listening but ignoring musical sounds */}
-        {isLooperMode && isRecordingLayer && (
-          <div className="mb-6 p-3 bg-emerald-900/30 border border-emerald-500/50 rounded-lg flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="text-emerald-400 animate-pulse text-xl">🔄</span>
-              <span className="text-emerald-300 font-medium">Looper Mode - Recording Layer (say &quot;done&quot; when finished)</span>
-            </div>
-            <button
-              onClick={() => {
-                if (mediaRecorderRef.current?.state === 'recording') {
-                  mediaRecorderRef.current.stop();
-                }
-                setIsLooperMode(false);
-                setIsRecordingLayer(false);
-              }}
-              className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors"
-            >
-              Done
-            </button>
-          </div>
-        )}
-
         {/* Legacy Recording Mode Banner (non-looper, manual recording) */}
         {isRecordingLayer && !isLooperMode && (
           <div className="mb-6 p-3 bg-red-900/30 border border-red-500/50 rounded-lg flex items-center justify-between">
@@ -1091,24 +1069,46 @@ export default function Home() {
           <main className="space-y-6">
             {/* Visual Element + Main CTA */}
             <div className="flex flex-col items-center p-8 bg-slate-800/30 rounded-xl border border-slate-700/50">
-              {/* Animated rings */}
+              {/* Animated rings - green when in looper mode */}
               <div className="relative w-40 h-40 md:w-48 md:h-48 mb-6">
-                <div className={`absolute inset-0 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-20 ${getRingAnimation()}`} />
-                <div className={`absolute inset-3 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 opacity-30 ${appState !== 'idle' ? 'animate-pulse' : ''}`} />
-                <div className="absolute inset-6 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 opacity-50" />
+                <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${isLooperMode && isRecordingLayer ? 'from-emerald-500 to-green-500' : 'from-purple-500 to-pink-500'} opacity-20 ${getRingAnimation()}`} />
+                <div className={`absolute inset-3 rounded-full bg-gradient-to-r ${isLooperMode && isRecordingLayer ? 'from-emerald-500 to-green-500' : 'from-purple-500 to-pink-500'} opacity-30 ${appState !== 'idle' ? 'animate-pulse' : ''}`} />
+                <div className={`absolute inset-6 rounded-full bg-gradient-to-r ${isLooperMode && isRecordingLayer ? 'from-emerald-600 to-green-600' : 'from-purple-600 to-pink-600'} opacity-50`} />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <span className="text-5xl md:text-6xl">
-                    {appState === 'idle' && '🎤'}
-                    {appState === 'connecting' && '⏳'}
-                    {appState === 'listening' && '👂'}
-                    {appState === 'processing' && '🤔'}
-                    {appState === 'speaking' && '🗣️'}
-                    {appState === 'generating' && '✨'}
-                    {appState === 'playing' && '🎵'}
-                    {appState === 'recording' && '🔴'}
+                    {isLooperMode && isRecordingLayer && '🔄'}
+                    {!isLooperMode && appState === 'idle' && '🎤'}
+                    {!isLooperMode && appState === 'connecting' && '⏳'}
+                    {!isLooperMode && appState === 'listening' && '👂'}
+                    {!isLooperMode && appState === 'processing' && '🤔'}
+                    {!isLooperMode && appState === 'speaking' && '🗣️'}
+                    {!isLooperMode && appState === 'generating' && '✨'}
+                    {!isLooperMode && appState === 'playing' && '🎵'}
+                    {!isLooperMode && appState === 'recording' && '🔴'}
                   </span>
                 </div>
               </div>
+
+              {/* Looper Mode Instructions (integrated with orb instead of separate banner) */}
+              {isLooperMode && isRecordingLayer && (
+                <div className="flex flex-col items-center mb-4">
+                  <p className="text-emerald-400 text-sm font-medium animate-pulse">
+                    Recording layer... say &quot;done&quot; when finished
+                  </p>
+                  <button
+                    onClick={() => {
+                      if (mediaRecorderRef.current?.state === 'recording') {
+                        mediaRecorderRef.current.stop();
+                      }
+                      setIsLooperMode(false);
+                      setIsRecordingLayer(false);
+                    }}
+                    className="mt-2 px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium transition-colors"
+                  >
+                    Done
+                  </button>
+                </div>
+              )}
 
               {/* Main CTA Button */}
               <button
