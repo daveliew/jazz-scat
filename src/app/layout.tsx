@@ -15,8 +15,20 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Jazz Scat - Your AI Jam Partner",
   description:
-    "An AI-powered voice assistant for music discovery, creation, and jamming.",
-  keywords: ["music", "AI", "voice", "jamming", "companion"],
+    "Practice vocals with AI-generated backing tracks and real-time coaching. No band needed.",
+  keywords: ["music", "AI", "voice", "jamming", "companion", "scat", "jazz", "improv", "vocals"],
+  openGraph: {
+    title: "Jazz Scat - Your AI Jam Partner",
+    description: "Practice vocals with AI-generated backing tracks and real-time coaching. No band needed.",
+    type: "website",
+    locale: "en_US",
+    siteName: "Jazz Scat",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Jazz Scat - Your AI Jam Partner",
+    description: "Practice vocals with AI-generated backing tracks and real-time coaching.",
+  },
 };
 
 export default function RootLayout({

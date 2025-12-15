@@ -63,7 +63,6 @@ export function useVoiceDJ() {
     if (state.isAudioUnlocked) return true;
 
     if (!isIOSDevice()) {
-      console.log('Skipping audio unlock (not iOS)');
       setState((prev) => ({ ...prev, isAudioUnlocked: true }));
       return true;
     }
@@ -80,7 +79,6 @@ export function useVoiceDJ() {
         backingTrackRef.current.volume = 1;
         backingTrackRef.current.src = '';
         setState((prev) => ({ ...prev, isAudioUnlocked: true }));
-        console.log('iOS audio unlocked successfully');
         return true;
       } catch (e) {
         console.warn('iOS audio unlock failed:', e);
@@ -285,7 +283,6 @@ export function useVoiceDJ() {
 
   const generateBackingTrack = useCallback(
     async (prompt: string): Promise<string> => {
-      console.log('generateBackingTrack:', prompt);
       setState((prev) => ({
         ...prev,
         appState: 'generating',
@@ -353,7 +350,6 @@ export function useVoiceDJ() {
   );
 
   const makeMusic = useCallback(async (prompt: string): Promise<string> => {
-    console.log('makeMusic:', prompt);
     setState((prev) => ({
       ...prev,
       appState: 'generating',
@@ -422,8 +418,6 @@ export function useVoiceDJ() {
   }, []);
 
   const stopTrack = useCallback(async (): Promise<string> => {
-    console.log('stopTrack called');
-
     if (backingTrackRef.current) {
       backingTrackRef.current.pause();
       backingTrackRef.current.currentTime = 0;

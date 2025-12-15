@@ -42,8 +42,8 @@ export function SessionLog({
           )}
           {[...sessionLog]
             .sort((a, b) => a.seq - b.seq)
-            .map((entry, index) => (
-              <div key={index} className="text-sm mb-2">
+            .map((entry) => (
+              <div key={entry.seq} className="text-sm mb-2">
                 <span
                   className={
                     entry.role === 'agent' ? 'text-purple-400' : 'text-blue-400'

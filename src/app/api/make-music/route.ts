@@ -30,8 +30,6 @@ export async function POST(request: NextRequest) {
     // Validate duration (3-300 seconds = 3000-300000ms)
     const clampedDuration = Math.max(3000, Math.min(300000, duration_ms));
 
-    console.log('🎵 Generating music:', { prompt, duration_ms: clampedDuration });
-
     // Get ElevenLabs client
     const client = getElevenLabsClient();
 
@@ -47,8 +45,6 @@ export async function POST(request: NextRequest) {
     // Return audio as base64 data URL
     const base64Audio = audioBuffer.toString('base64');
     const audioDataUrl = `data:audio/mpeg;base64,${base64Audio}`;
-
-    console.log('✅ Music generated successfully');
 
     return NextResponse.json({
       success: true,

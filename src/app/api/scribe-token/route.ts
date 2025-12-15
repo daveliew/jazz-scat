@@ -37,7 +37,6 @@ export async function GET() {
     }
 
     const data = await response.json();
-    console.log("Got Scribe token successfully");
     return NextResponse.json({ token: data.token });
   } catch (error) {
     console.error("Error getting Scribe token:", error);

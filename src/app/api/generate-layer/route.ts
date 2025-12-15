@@ -37,8 +37,6 @@ export async function POST(request: NextRequest) {
     // Build the prompt for music generation
     const prompt = buildMusicPrompt(layerConfig.promptTemplate, genre, bpm);
 
-    console.log(`Generating ${layerType} layer:`, { genre, bpm, prompt });
-
     // Get ElevenLabs client
     const client = getElevenLabsClient();
 

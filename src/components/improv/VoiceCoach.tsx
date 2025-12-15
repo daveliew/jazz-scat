@@ -15,14 +15,13 @@ export function VoiceCoach({ genre, bpm, activeLayers }: VoiceCoachProps) {
 
   const conversation = useConversation({
     onConnect: () => {
-      console.log('Connected to voice coach');
       setError(null);
     },
     onDisconnect: () => {
-      console.log('Disconnected from voice coach');
+      // Session ended
     },
-    onMessage: (message) => {
-      console.log('Coach message:', message);
+    onMessage: () => {
+      // Message received
     },
     onError: (err) => {
       console.error('Voice coach error:', err);

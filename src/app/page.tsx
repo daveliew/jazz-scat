@@ -59,7 +59,6 @@ export default function Home() {
   const conversation = useConversation({
     clientTools: {
       generate_backing_track: async ({ prompt }: { prompt: string }) => {
-        console.log('Agent called generate_backing_track:', prompt);
         try {
           const result = await actions.generateBackingTrack(prompt);
           return `${result} Current track: "${prompt}"`;
@@ -69,7 +68,6 @@ export default function Home() {
         }
       },
       make_music: async ({ prompt }: { prompt: string }) => {
-        console.log('Agent called make_music:', prompt);
         try {
           const result = await actions.makeMusic(prompt);
           return `${result} Current track: "${prompt}"`;
@@ -79,7 +77,6 @@ export default function Home() {
         }
       },
       stop_track: async () => {
-        console.log('Agent called stop_track');
         return await actions.stopTrack();
       },
     },
@@ -96,7 +93,6 @@ export default function Home() {
         if (scribeResponse.ok) {
           const { token } = await scribeResponse.json();
           await scribe.connect({ token, microphone: {} });
-          console.log('Scribe connected for live transcription');
         }
       } catch (err) {
         console.warn('Could not connect Scribe:', err);

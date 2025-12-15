@@ -23,8 +23,6 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    console.log("🔄 Updating agent prompt...");
-
     const response = await fetch(
       `https://api.elevenlabs.io/v1/convai/agents/${agentId}`,
       {
@@ -59,7 +57,6 @@ export async function PATCH(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log("✅ Agent prompt updated successfully");
     return NextResponse.json({ success: true, agent: data });
   } catch (error) {
     console.error("Error updating agent:", error);

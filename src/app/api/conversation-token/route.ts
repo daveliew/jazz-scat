@@ -11,14 +11,6 @@ export async function GET(request: NextRequest) {
       : process.env.ELEVENLABS_AGENT_ID;
     const apiKey = process.env.ELEVENLABS_API_KEY;
 
-    console.log("🔑 ENV CHECK:", {
-      agentType,
-      hasAgentId: !!agentId,
-      hasApiKey: !!apiKey,
-      agentIdPrefix: agentId?.substring(0, 10),
-      apiKeyPrefix: apiKey?.substring(0, 10),
-    });
-
     if (!agentId || !apiKey) {
       console.error("❌ Missing config:", { agentId: !!agentId, apiKey: !!apiKey });
       return NextResponse.json(
@@ -52,7 +44,6 @@ export async function GET(request: NextRequest) {
     }
 
     const data = await response.json();
-    console.log("✅ Got signed URL successfully");
     return NextResponse.json({ signedUrl: data.signed_url });
   } catch (error) {
     console.error("Error getting conversation token:", error);
