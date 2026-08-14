@@ -165,7 +165,9 @@
             "tool_call_sound_behavior": "auto",
             "parameters": {
               "type": "object",
-              "required": ["prompt"],
+              "required": [
+                "prompt"
+              ],
               "description": "",
               "properties": {
                 "prompt": {
@@ -196,7 +198,9 @@
             "tool_call_sound_behavior": "auto",
             "parameters": {
               "type": "object",
-              "required": ["prompt"],
+              "required": [
+                "prompt"
+              ],
               "description": "",
               "properties": {
                 "prompt": {
@@ -363,7 +367,9 @@
       "conversation_initiation_client_data_webhook": null,
       "webhooks": {
         "post_call_webhook_id": null,
-        "events": ["transcript"],
+        "events": [
+          "transcript"
+        ],
         "send_audio": false
       }
     },
@@ -449,58 +455,6 @@
     }
   },
   "phone_numbers": [],
-  "workflow": {
-    "edges": {
-      "edge_start_to_vibing": {
-        "source": "start_node",
-        "target": "node_vibing_dj",
-        "forward_condition": {
-          "label": "Music Generated",
-          "type": "llm",
-          "condition": "A backing track or music has been successfully generated and is now playing"
-        },
-        "backward_condition": null
-      }
-    },
-    "nodes": {
-      "start_node": {
-        "type": "start",
-        "position": {
-          "x": 0.0,
-          "y": 150.0
-        },
-        "edge_order": ["edge_start_to_vibing"]
-      },
-      "node_vibing_dj": {
-        "conversation_config": {
-          "turn": {
-            "turn_eagerness": "patient"
-          },
-          "tts": {
-            "voice_id": null
-          },
-          "agent": {
-            "prompt": {
-              "prompt": null,
-              "llm": null,
-              "built_in_tools": {}
-            }
-          }
-        },
-        "additional_prompt": "VIBING MODE: Music is playing. Be CHILL and laid back. DO NOT fill silence - silence means they're enjoying the music. Use SHORT responses (1-2 sentences max). Only speak when the user speaks to you. If user wants new/different music, let them know you can help - they just need to describe what they want.",
-        "additional_knowledge_base": [],
-        "additional_tool_ids": [],
-        "type": "override_agent",
-        "position": {
-          "x": 400.0,
-          "y": 50.0
-        },
-        "edge_order": [],
-        "label": "Vibing DJ"
-      }
-    },
-    "prevent_subagent_loops": false
-  },
   "access_info": {
     "is_creator": true,
     "creator_name": "David Liew",
@@ -510,5 +464,19 @@
   "tags": [],
   "version_id": "agtvrsn_7101kceqy2gkf4e9y7a0p0f42a1r",
   "branch_id": "agtbrch_6301kc8gp5tveaw8rjnbh31tn7t6",
-  "main_branch_id": "agtbrch_6301kc8gp5tveaw8rjnbh31tn7t6"
+  "main_branch_id": "agtbrch_6301kc8gp5tveaw8rjnbh31tn7t6",
+  "workflow": {
+    "nodes": {
+      "start_node": {
+        "type": "start",
+        "position": {
+          "x": 0.0,
+          "y": 150.0
+        },
+        "edge_order": []
+      }
+    },
+    "edges": {},
+    "prevent_subagent_loops": false
+  }
 }

@@ -8,7 +8,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test:agent": "tsx scripts/test-agent.ts"
+    "test:agent": "tsx scripts/test-agent.ts",
+    "verify:agent": "tsx scripts/verify-agent.ts",
+    "sync:agent": "tsx scripts/update-agent-config.ts"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.27.0",

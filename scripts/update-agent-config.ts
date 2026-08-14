@@ -45,15 +45,22 @@ async function updateAgentConfig() {
   const conversationConfig = structuredClone(config.conversation_config);
   delete conversationConfig.agent.prompt.tools;
 
+  // A config with no `workflow` key means "no workflow" — send null so the
+  // platform clears any workflow the agent still has, rather than keeping it.
   const body = {
     conversation_config: conversationConfig,
-    workflow: config.workflow,
+    workflow: config.workflow ?? null,
   };
 
   console.log("Syncing agent config...");
   console.log("Agent ID:", agentId.substring(0, 12) + "...");
   console.log("tool_ids:", conversationConfig.agent.prompt.tool_ids);
-  console.log("workflow nodes:", Object.keys(config.workflow?.nodes ?? {}));
+  console.log(
+    "workflow:",
+    config.workflow
+      ? Object.keys(config.workflow.nodes ?? {})
+      : "none (cleared)",
+  );
 
   const response = await fetch(
     `https://api.elevenlabs.io/v1/convai/agents/${agentId}`,
